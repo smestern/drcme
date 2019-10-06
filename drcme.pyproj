@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{d7e074b1-fd20-4c69-9ba6-7c731bf433f7}</ProjectGuid>
+    <ProjectHome />
+    <StartupFile>drcme\bin\run_spca_fit - hard coded.py</StartupFile>
+    <SearchPath />
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <InterpreterId />
+    <CommandLineArguments>
+    </CommandLineArguments>
+    <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
+    <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
+  <PropertyGroup>
+    <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="requirements.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="drcme\bin\run_combined_tsne.py" />
+    <Compile Include="drcme\bin\run_ephys_morph_clustering.py" />
+    <Compile Include="drcme\bin\run_existing_spca_on_new_data.py" />
+    <Compile Include="drcme\bin\run_joint_ephys_morph_tsne.py" />
+    <Compile Include="drcme\bin\run_merge_unstable_clusters.py" />
+    <Compile Include="drcme\bin\run_post_r_merging.py" />
+    <Compile Include="drcme\bin\run_refine_unstable_coclusters.py" />
+    <Compile Include="drcme\bin\run_rf_prediction.py" />
+    <Compile Include="drcme\bin\run_spca_fit - hard coded.py" />
+    <Compile Include="drcme\bin\run_spca_fit.py" />
+    <Compile Include="drcme\delcol.py" />
+    <Compile Include="drcme\ephys_morph_clustering.py" />
+    <Compile Include="drcme\load_data.py" />
+    <Compile Include="drcme\post_gmm_merging.py" />
+    <Compile Include="drcme\prediction.py" />
+    <Compile Include="drcme\spca_fit.py" />
+    <Compile Include="drcme\spca_transform.py" />
+    <Compile Include="drcme\spca_zht.py" />
+    <Compile Include="drcme\tests\test_spca_zht.py" />
+    <Compile Include="drcme\tsne.py" />
+    <Compile Include="drcme\__init__.py" />
+    <Compile Include="setup.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="drcme" />
+    <Folder Include="drcme\bin" />
+    <Folder Include="drcme\tests" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+</Project>

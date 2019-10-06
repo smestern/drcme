@@ -35,22 +35,14 @@ def main(params_file, output_dir, output_code, datasets, **kwargs):
     # Load data from each dataset
     data_objects = []
     specimen_ids_list = []
-    for ds in datasets:
-        if len(ds["limit_to_cortical_layers"]) == 0:
-            limit_to_cortical_layers = None
-        else:
-            limit_to_cortical_layers = ds["limit_to_cortical_layers"]
-
-        data_for_spca, specimen_ids = ld.load_h5_data(h5_fv_file=ds["fv_h5_file"],
-                                            metadata_file=ds["metadata_file"],
-                                            dendrite_type=ds["dendrite_type"],
-                                            need_structure=not ds["allow_missing_structure"],
-                                            include_dend_type_null=ds["allow_missing_dendrite"],
-                                            limit_to_cortical_layers=limit_to_cortical_layers,
-                                            id_file=ds["id_file"],
-                                            params_file=params_file)
-        data_objects.append(data_for_spca)
-        specimen_ids_list.append(specimen_ids)
+    
+    data_for_spca, specimen_ids = ld.load_h5_data("C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\fv_test.h5",
+                                            metadata_file=None,
+                                            limit_to_cortical_layers=None,
+                                            id_file="C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\specids.txt",
+                                            params_file="C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\default_spca_params.json")
+    data_objects.append(data_for_spca)
+    specimen_ids_list.append(specimen_ids)
 
     data_for_spca = {}
     for i, do in enumerate(data_objects):
@@ -85,5 +77,7 @@ def main(params_file, output_dir, output_code, datasets, **kwargs):
 
 
 if __name__ == "__main__":
-    module = ags.ArgSchemaParser(schema_type=AnalysisParameters)
-    main(**module.args)
+    main("C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\default_spca_params.json", "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\output", "test",  1)
+    
+
+    ## --output_dir "C:\Users\SMest\source\repos\drcme\drcme\bin\output" --output_code "test" --input_json "C:\Users\SMest\source\repos\drcme\drcme\bin\dataset_params.json" --output_json "C:\Users\SMest\source\repos\drcme\drcme\bin"
