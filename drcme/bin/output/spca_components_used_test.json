@@ -1,0 +1,69 @@
+[
+    {
+        "key": "first_ap_v",
+        "indices": [
+            0,
+            1,
+            2,
+            3
+        ]
+    },
+    {
+        "key": "first_ap_dv",
+        "indices": [
+            0,
+            1,
+            2,
+            3,
+            4
+        ]
+    },
+    {
+        "key": "isi_shape",
+        "indices": [
+            0,
+            1,
+            2
+        ]
+    },
+    {
+        "key": "step_subthresh",
+        "indices": [
+            0,
+            1
+        ]
+    },
+    {
+        "key": "subthresh_norm",
+        "indices": [
+            0,
+            1,
+            2,
+            3,
+            4
+        ]
+    },
+    {
+        "key": "spiking_peak_v",
+        "indices": [
+            0,
+            1
+        ]
+    },
+    {
+        "key": "spiking_fast_trough_v",
+        "indices": [
+            0,
+            1
+        ]
+    },
+    {
+        "key": "spiking_threshold_v",
+        "indices": [
+            0,
+            1,
+            2,
+            3
+        ]
+    }
+]

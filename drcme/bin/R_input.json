@@ -1,0 +1,15 @@
+{
+  "components_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\output\\sparse_pca_components_test.csv",
+  "tau_file": "tau_test.csv",
+  "labels_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\labels.csv",
+  "bic_file": "bic_test.csv",
+  "merge_info_file": "merge_testfile",
+  "post_merge_tau_file": "post_tau_test.csv",
+  "post_merge_labels_file": "post_merge_labels.csv",
+  "jaccard_file": "jc_test",
+  "etypes_file": "etypes_test.csv",
+  "post_merge_proba_file": "pmp.csv",
+  "merge_unstable_info_file": "unstable.csv",
+  "entropy_piecewise_components": 3,
+  "outliers": []
+}
