@@ -16,4 +16,4 @@ Rscript run_cluster_stability.r $CONFIG
 # Merge unstable clusters
 python run_merge_unstable_clusters.py --input_json $CONFIG
 
-pause
+read -p "Press enter to continue"
