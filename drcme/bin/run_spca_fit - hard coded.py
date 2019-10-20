@@ -7,7 +7,7 @@ import joblib
 import logging
 import os
 import json
-
+from sklearn.impute import SimpleImputer
 
 class DatasetParameters(ags.schemas.DefaultSchema):
     fv_h5_file = ags.fields.InputFile(description="HDF5 file with feature vectors")
@@ -36,11 +36,24 @@ def main(params_file, output_dir, output_code, datasets, **kwargs):
     data_objects = []
     specimen_ids_list = []
     
-    data_for_spca, specimen_ids = ld.load_h5_data("C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\fv_test.h5",
+    data_for_spca, specimen_ids = ld.load_h5_data("C:\\Users\\SMest\\Documents\\fv_test.h5",
                                             metadata_file=None,
                                             limit_to_cortical_layers=None,
-                                            id_file="C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\specids.txt",
+                                            id_file=None,
                                             params_file="C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\default_spca_params.json")
+    imp = SimpleImputer(missing_values=0, strategy='mean', copy=False,)
+    
+    for l, m in data_for_spca.items():
+        if type(m) == np.ndarray:
+           #
+            nu_m = np.nan_to_num(m)
+            p = np.nonzero(nu_m[:,:])[1]
+            p = max(p)
+            nu_m = nu_m[:,:p]
+            print(l)
+            print(p)
+            data_for_spca[l] = imp.fit_transform(nu_m)
+            #data_for_spca[l] = nu_m
     data_objects.append(data_for_spca)
     specimen_ids_list.append(specimen_ids)
 
@@ -77,7 +90,7 @@ def main(params_file, output_dir, output_code, datasets, **kwargs):
 
 
 if __name__ == "__main__":
-    main("C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\default_spca_params.json", "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\output", "test",  1)
+    main("C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\default_spca_params.json", "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\output2", "test",  1)
     
 
-    ## --output_dir "C:\Users\SMest\source\repos\drcme\drcme\bin\output" --output_code "test" --input_json "C:\Users\SMest\source\repos\drcme\drcme\bin\dataset_params.json" --output_json "C:\Users\SMest\source\repos\drcme\drcme\bin"
+    

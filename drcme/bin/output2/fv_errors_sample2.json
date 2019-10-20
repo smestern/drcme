@@ -1,0 +1,20 @@
+[
+    {
+        "id": 479770916,
+        "error": {
+            "error": {
+                "type": "dataset",
+                "details": "Traceback (most recent call last):\n  File \"C:\\Users\\SMest\\source\\repos\\ipfx\\ipfx\\bin\\run_feature_vector_extraction_hardcoded.py\", line 320, in data_for_specimen_id\n    nwb_file=nwb_path, sweep_info=sweep_info, ontology=ontology)\n  File \"C:\\Users\\SMest\\source\\repos\\ipfx\\ipfx\\aibs_data_set.py\", line 16, in __init__\n    self.nwb_data = nwb_reader.create_nwb_reader(nwb_file)\n  File \"C:\\Users\\SMest\\source\\repos\\ipfx\\ipfx\\nwb_reader.py\", line 672, in create_nwb_reader\n    nwb_version = get_nwb_version(nwb_file)\n  File \"C:\\Users\\SMest\\source\\repos\\ipfx\\ipfx\\nwb_reader.py\", line 611, in get_nwb_version\n    with h5py.File(nwb_file, 'r') as f:\n  File \"C:\\Users\\SMest\\source\\repos\\ipfx\\env64\\lib\\site-packages\\h5py\\_hl\\files.py\", line 408, in __init__\n    swmr=swmr)\n  File \"C:\\Users\\SMest\\source\\repos\\ipfx\\env64\\lib\\site-packages\\h5py\\_hl\\files.py\", line 173, in make_fid\n    fid = h5f.open(name, flags, fapl=fapl)\n  File \"h5py\\_objects.pyx\", line 54, in h5py._objects.with_phil.wrapper\n  File \"h5py\\_objects.pyx\", line 55, in h5py._objects.with_phil.wrapper\n  File \"h5py\\h5f.pyx\", line 88, in h5py.h5f.open\nOSError: Unable to open file (truncated file: eof = 31580160, sblock->base_addr = 0, stored_eof = 118983362)\n"
+            }
+        }
+    },
+    {
+        "id": 614651270,
+        "error": {
+            "error": {
+                "type": "dataset",
+                "details": "Traceback (most recent call last):\n  File \"C:\\Users\\SMest\\source\\repos\\ipfx\\ipfx\\bin\\run_feature_vector_extraction_hardcoded.py\", line 320, in data_for_specimen_id\n    nwb_file=nwb_path, sweep_info=sweep_info, ontology=ontology)\n  File \"C:\\Users\\SMest\\source\\repos\\ipfx\\ipfx\\aibs_data_set.py\", line 16, in __init__\n    self.nwb_data = nwb_reader.create_nwb_reader(nwb_file)\n  File \"C:\\Users\\SMest\\source\\repos\\ipfx\\ipfx\\nwb_reader.py\", line 672, in create_nwb_reader\n    nwb_version = get_nwb_version(nwb_file)\n  File \"C:\\Users\\SMest\\source\\repos\\ipfx\\ipfx\\nwb_reader.py\", line 611, in get_nwb_version\n    with h5py.File(nwb_file, 'r') as f:\n  File \"C:\\Users\\SMest\\source\\repos\\ipfx\\env64\\lib\\site-packages\\h5py\\_hl\\files.py\", line 408, in __init__\n    swmr=swmr)\n  File \"C:\\Users\\SMest\\source\\repos\\ipfx\\env64\\lib\\site-packages\\h5py\\_hl\\files.py\", line 173, in make_fid\n    fid = h5f.open(name, flags, fapl=fapl)\n  File \"h5py\\_objects.pyx\", line 54, in h5py._objects.with_phil.wrapper\n  File \"h5py\\_objects.pyx\", line 55, in h5py._objects.with_phil.wrapper\n  File \"h5py\\h5f.pyx\", line 88, in h5py.h5f.open\nOSError: Unable to open file (truncated file: eof = 19709952, sblock->base_addr = 0, stored_eof = 29742199)\n"
+            }
+        }
+    }
+]
