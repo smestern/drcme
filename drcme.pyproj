@@ -5,14 +5,14 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{d7e074b1-fd20-4c69-9ba6-7c731bf433f7}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>drcme\bin\run_combined_tsne.py</StartupFile>
+    <StartupFile>drcme\bin\run_spca_fit.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
     <InterpreterId>Global|PythonCore|3.7</InterpreterId>
-    <CommandLineArguments>--csv_file "</CommandLineArguments>
+    <CommandLineArguments>--input_json "C:\Users\SMest\source\repos\drcme\drcme\bin\SPCA_input.json"</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
     <IsWindowsApplication>False</IsWindowsApplication>
@@ -35,7 +35,7 @@
     <Compile Include="drcme\bin\run_post_r_merging.py" />
     <Compile Include="drcme\bin\run_refine_unstable_coclusters.py" />
     <Compile Include="drcme\bin\run_rf_prediction.py" />
-    <Compile Include="drcme\bin\run_spca_fit - hard coded - Copy.py" />
+    <Compile Include="drcme\bin\run_spca_fit_single_col.py" />
     <Compile Include="drcme\bin\run_spca_fit - hard coded.py" />
     <Compile Include="drcme\bin\run_spca_fit.py" />
     <Compile Include="drcme\delcol.py" />

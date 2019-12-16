@@ -7,7 +7,10 @@ import joblib
 import logging
 import os
 import json
-
+from sklearn.impute import SimpleImputer
+from scipy import signal
+from sklearn.ensemble import IsolationForest
+import math
 
 class DatasetParameters(ags.schemas.DefaultSchema):
     fv_h5_file = ags.fields.InputFile(description="HDF5 file with feature vectors")
@@ -30,11 +33,62 @@ class AnalysisParameters(ags.ArgSchema):
                                  description="schema for loading one or more specific datasets for the analysis")
 
 
+
+
+def outlierElim(ids, data, cont=0.05):
+    od = IsolationForest(contamination=cont, behaviour="new")
+    outlierIds = []
+    for x in data:
+        darr = data[x]
+        f_outliers = od.fit_predict(darr)
+        drop_o = np.nonzero(np.where(f_outliers==-1, 1, 0))[0]
+        outlierIds.append(ids[drop_o])
+    common = np.hstack(outlierIds)
+    u, count_o = np.unique(common, return_counts=True)
+    outlier = u[count_o>3]
+    print(outlier)
+    _, _, outlier_ind = np.intersect1d(outlier, ids, return_indices=True)
+    np.savetxt('ids_outlier.csv', ids[outlier_ind], delimiter=",", fmt='%12.5f')
+    ids = np.delete(ids, outlier_ind)
+    np.savetxt('ids_outlierDropped.csv', ids, delimiter=",", fmt='%12.5f')
+    for x in data:
+        data[x] = np.delete(data[x], outlier_ind, axis=0)
+        np.savetxt(x + '_outlierDropped.csv', data[x], delimiter=",", fmt='%12.5f')
+    return ids, data
+
+
+    
+    
+    
+
+def equal_ar_size(array1, array2, fill):
+    r1, s1 = array1.shape
+    r2, s2 = array2.shape
+    if s1 > s2:
+       divisor = math.gcd(int(s2+1), int(s1 + 1))
+       fact1 = math.ceiling(s1 / divisor)
+       fact2 = math.ceiling(s2 / divisor)
+       array1 = decimate(array1, fact1, axis=1)
+       array2 = decimate(array2, fact2, axis=1)
+    elif s2 > s1:
+       divisor = math.gcd(int(s2+1), int(s1 + 1))
+       fact1 = math.ceiling(s1 / divisor)
+       fact2 = math.ceiling(s2 / divisor)
+       array1 = decimate(array1, fact1, axis=1)
+       array2 = decimate(array2, fact2, axis=1)
+    np.savetxt('a1.csv', array1,delimiter=",", fmt='%12.5f')
+    np.savetxt('a2.csv', array2, delimiter=",", fmt='%12.5f')
+    return array1, array2
+
+
+
 def main(params_file, output_dir, output_code, datasets, **kwargs):
 
     # Load data from each dataset
     data_objects = []
     specimen_ids_list = []
+    imp = SimpleImputer(missing_values=0, strategy='mean', copy=False,)
+    
     for ds in datasets:
         if len(ds["limit_to_cortical_layers"]) == 0:
             limit_to_cortical_layers = None
@@ -49,6 +103,16 @@ def main(params_file, output_dir, output_code, datasets, **kwargs):
                                             limit_to_cortical_layers=limit_to_cortical_layers,
                                             id_file=ds["id_file"],
                                             params_file=params_file)
+        for l, m in data_for_spca.items():
+            if type(m) == np.ndarray:
+                nu_m = np.nan_to_num(m)
+                p = np.nonzero(nu_m[:,:])[1]
+                p = max(p)
+                nu_m = nu_m[:,:p]
+                print(l)
+                print(p)
+                data_for_spca[l] = imp.fit_transform(nu_m)
+                #data_for_spca[l] = nu_m
         data_objects.append(data_for_spca)
         specimen_ids_list.append(specimen_ids)
 
@@ -58,14 +122,25 @@ def main(params_file, output_dir, output_code, datasets, **kwargs):
             if k not in data_for_spca:
                 data_for_spca[k] = do[k]
             else:
+                data_for_spca[k], do[k] = equal_ar_size(data_for_spca[k], do[k],0)
                 data_for_spca[k] = np.vstack([data_for_spca[k], do[k]])
     specimen_ids = np.hstack(specimen_ids_list)
+
+    specimen_ids, data_for_spca = outlierElim(specimen_ids, data_for_spca)
+
 
     first_key = list(data_for_spca.keys())[0]
     if len(specimen_ids) != data_for_spca[first_key].shape[0]:
         logging.error("Mismatch of specimen id dimension ({:d}) and data dimension ({:d})".format(len(specimen_ids), data_for_spca[first_key].shape[0]))
 
+    ##Outlier Elim?
+
+
+
     logging.info("Proceeding with %d cells", len(specimen_ids))
+
+
+
 
     # Load parameters
     spca_zht_params, _ = ld.define_spca_parameters(filename=params_file)

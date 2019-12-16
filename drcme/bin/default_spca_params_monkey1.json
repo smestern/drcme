@@ -1,0 +1,20 @@
+{
+  "AP fast trough (mV)": {
+    "n_components": 3,
+    "nonzero_component_list": [10,20,80],
+    "use_corr": false,
+    "range": null
+  },
+  "AP height": {
+    "n_components": 2,
+    "nonzero_component_list": [0,10,25],
+    "use_corr": false,
+    "range": null
+  },
+  "first_ap_v": {
+  "n_components": 4,
+  "nonzero_component_list": [10,45,80,90],
+  "use_corr": false,
+  "range": null
+  }
+}

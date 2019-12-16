@@ -421,7 +421,96 @@ def load_h5_data(h5_fv_file, params_file, metadata_file=None, dendrite_type="all
 
 
     return data_for_spca, specimen_ids
+def load_h5_data_SC(h5_fv_file, params_file, metadata_file=None, dendrite_type="all",
+        need_structure=False,
+        include_dend_type_null=True,
+        limit_to_cortical_layers=None,
+        id_file=None):
+    """Load dictionary for sPCA processing from HDF5 file with specified
+       metadata filters
 
+    Parameters
+    ----------
+    h5_fv_file: str
+        Path to feature vector HDF5 file
+    params_file: str
+        Path to sPCA parameters JSON file
+    metadata_file: str (optional, default None)
+        Path to metadata CSV file
+    dendrite_type: str (optional, default 'all')
+        Dendrite type for filtering ('all', 'spiny', 'aspiny') (only used
+        if metadata file is supplied)
+    need_structure: bool (optional, default False)
+        Requires that structure is present (only used
+        if metadata file is supplied)
+    include_dend_type_null: bool (optional, default True)
+        Also include cells without a dendrite type available regardless of
+        what `dendrite_type` is specified (only used
+        if metadata file is supplied)
+    limit_to_cortical_layers: list (optional, default None)
+        List of cortical layers that metadata must match for inclusion (only used
+        if metadata file is supplied)
+    id_file: str (optional, default None)
+        Path to text file with IDs to use
+
+    Results
+    -------
+    data_for_spca: dict
+        Dictionary of data sets for sPCA analysis
+    specimen_ids: array
+        The specimen IDs for the cells in the data sets
+    """
+
+    f = h5py.File(h5_fv_file, "r")
+    spca_zht_params, step_num = define_spca_parameters(filename=params_file)
+
+    specimen_ids = f["ids"][...]
+    logging.info("Starting with {:d} cells".format(len(specimen_ids)))
+
+    # Identify cells with no ramp spike
+    first_ap_v = f["first_ap_v"][...]
+
+    # Expected to have three equal-length AP waveforms
+    n_bins = first_ap_v.shape[1] // 3
+
+    # Ramp waveform expected to be last
+    ramp_mask = ~np.all(first_ap_v[:, -n_bins:] == 0, axis=1)
+    logging.info("{} cells have no ramp AP".format(np.sum(ramp_mask == False)))
+
+    
+
+    data_for_spca = {}
+    for k in spca_zht_params:
+        if k not in f.keys():
+            logging.debug("{} not found in HDF5 file".format(k))
+            continue
+        data = f[k][:]
+        data_for_spca[k] = data
+
+    # Calculate additional data set if requested
+    if ("inst_freq" in spca_zht_params and "inst_freq_norm" in spca_zht_params
+        and "inst_freq" in f.keys()):
+        logging.debug("inst_freq_norm will be calculated from inst_freq")
+        indices = spca_zht_params["inst_freq"][3]
+        logging.debug("calculating inst_freq_norm with step_num {:d}".format(step_num))
+        inst_freq_data = f["inst_freq"][...]
+        if indices is not None:
+            inst_freq_norm = inst_freq_data[mask, :][:, indices]
+        else:
+            inst_freq_norm = inst_freq_data[mask, :]
+        n_steps = len(indices) // step_num
+        for i in range(n_steps):
+            row_max = inst_freq_norm[:, i * step_num:(i + 1) * step_num].max(axis=1)
+            row_max[row_max == 0] = 1. # handle divide-by-zero issues
+            inst_freq_norm[:, i * step_num:(i + 1) * step_num] = inst_freq_norm[:, i * step_num:(i + 1) * step_num] / row_max[:, None]
+        data_for_spca["inst_freq_norm"] = inst_freq_norm
+    f.close()
+
+    specimen_ids = specimen_ids
+    logging.info("Loaded data for {} cells".format(len(specimen_ids)))
+
+
+    return data_for_spca, specimen_ids
 
 def mask_for_metadata(specimen_ids, metadata_df, dendrite_type="all",
         need_structure=False, include_dend_type_null=True,

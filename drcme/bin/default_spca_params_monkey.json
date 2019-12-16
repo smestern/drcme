@@ -3,13 +3,13 @@
     "n_components": 7,
     "nonzero_component_list": [ 400, 350, 400, 350, 350, 375, 350 ],
     "use_corr": false,
-    "range": [ 0, 448 ]
+    "range": [ 0, 149 ]
   },
   "first_ap_dv": {
     "n_components": 9,
     "nonzero_component_list": [ 225, 175, 225, 250, 150, 150, 150, 130, 130 ],
     "use_corr": false,
-    "range": [ 0, 445 ]
+    "range": [ 0, 149 ]
   },
   "isi_shape": {
     "n_components": 4,

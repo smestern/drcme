@@ -1,0 +1,4 @@
+{
+    "gmm_components": 6,
+    "postmerge_clusters": 5
+}

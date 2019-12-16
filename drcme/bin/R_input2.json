@@ -10,6 +10,6 @@
   "etypes_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\etypes_test.csv",
   "post_merge_proba_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\pmp.csv",
   "merge_unstable_info_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\unstable.csv",
-  "entropy_piecewise_components": 2,
+  "entropy_piecewise_components": 3,
   "outliers": []
 }

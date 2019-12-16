@@ -30,32 +30,45 @@ class AnalysisParameters(ags.ArgSchema):
                                  description="schema for loading one or more specific datasets for the analysis")
 
 
+def equal_ar_size(array1, array2, fill):
+    r1, s1 = array1.shape
+    r2, s2 = array2.shape
+    if s1 > s2:
+       array2 = np.hstack((array2, np.full((r2, s1-s2),fill)))
+    elif s2 > s1:
+       array1 = np.hstack((array1, np.full((r1, s2-s1),fill)))
+
+    return array1, array2
+
 def main(params_file, output_dir, output_code, datasets, **kwargs):
 
     # Load data from each dataset
     data_objects = []
     specimen_ids_list = []
-    
-    data_for_spca, specimen_ids = ld.load_h5_data("C:\\Users\\SMest\\fv_ nmmouse_human.h5",
-                                            metadata_file=None,
-                                            limit_to_cortical_layers=None,
-                                            id_file=None,
-                                            params_file="C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\default_spca_params.json")
     imp = SimpleImputer(missing_values=0, strategy='mean', copy=False,)
     
-    for l, m in data_for_spca.items():
-        if type(m) == np.ndarray:
-           #
-            nu_m = np.nan_to_num(m)
-            p = np.nonzero(nu_m[:,:])[1]
-            p = max(p)
-            nu_m = nu_m[:,:p]
-            print(l)
-            print(p)
-            data_for_spca[l] = imp.fit_transform(nu_m)
-            #data_for_spca[l] = nu_m
-    data_objects.append(data_for_spca)
-    specimen_ids_list.append(specimen_ids)
+    for ds in datasets:
+        if len(ds["limit_to_cortical_layers"]) == 0:
+            limit_to_cortical_layers = None
+        else:
+            limit_to_cortical_layers = ds["limit_to_cortical_layers"]
+
+        data_for_spca, specimen_ids = ld.load_h5_data_SC(h5_fv_file=ds["fv_h5_file"],
+                                            metadata_file=ds["metadata_file"],
+                                            dendrite_type=ds["dendrite_type"],
+                                            need_structure=not ds["allow_missing_structure"],
+                                            include_dend_type_null=ds["allow_missing_dendrite"],
+                                            limit_to_cortical_layers=limit_to_cortical_layers,
+                                            id_file=ds["id_file"],
+                                            params_file=params_file)
+        for l, m in data_for_spca.items():
+            if type(m) == np.ndarray:
+                nu_m = np.nan_to_num(m)
+               
+                data_for_spca[l] = nu_m
+                #data_for_spca[l] = nu_m
+        data_objects.append(data_for_spca)
+        specimen_ids_list.append(specimen_ids)
 
     data_for_spca = {}
     for i, do in enumerate(data_objects):
@@ -63,6 +76,7 @@ def main(params_file, output_dir, output_code, datasets, **kwargs):
             if k not in data_for_spca:
                 data_for_spca[k] = do[k]
             else:
+                data_for_spca[k], do[k] = equal_ar_size(data_for_spca[k], do[k],0)
                 data_for_spca[k] = np.vstack([data_for_spca[k], do[k]])
     specimen_ids = np.hstack(specimen_ids_list)
 
@@ -77,7 +91,8 @@ def main(params_file, output_dir, output_code, datasets, **kwargs):
 
     # Run sPCA
     subset_for_spca = sf.select_data_subset(data_for_spca, spca_zht_params)
-    spca_results = sf.spca_on_all_data(subset_for_spca, spca_zht_params)
+    
+    spca_results = sf.spca_on_all_data_SC(subset_for_spca, spca_zht_params)
     combo, component_record = sf.consolidate_spca(spca_results)
 
     logging.info("Saving results...")
@@ -90,7 +105,5 @@ def main(params_file, output_dir, output_code, datasets, **kwargs):
 
 
 if __name__ == "__main__":
-    main("C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\default_spca_params.json", "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\output2", "test",  1)
-    
-
-    
+    module = ags.ArgSchemaParser(schema_type=AnalysisParameters)
+    main(**module.args)
