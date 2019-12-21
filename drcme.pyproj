@@ -5,14 +5,14 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{d7e074b1-fd20-4c69-9ba6-7c731bf433f7}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>drcme\bin\run_spca_fit.py</StartupFile>
+    <StartupFile>drcme\bin\run_combined_tsne.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
     <InterpreterId>Global|PythonCore|3.7</InterpreterId>
-    <CommandLineArguments>--input_json "C:\Users\SMest\source\repos\drcme\drcme\bin\SPCA_input.json"</CommandLineArguments>
+    <CommandLineArguments>--input_json "C:\Users\SMest\source\repos\drcme\drcme\bin\TSNE_input.json"</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
     <IsWindowsApplication>False</IsWindowsApplication>
@@ -27,6 +27,7 @@
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="drcme\bin\run_single_TSNE.py" />
     <Compile Include="drcme\bin\run_combined_tsne.py" />
     <Compile Include="drcme\bin\run_ephys_morph_clustering.py" />
     <Compile Include="drcme\bin\run_existing_spca_on_new_data.py" />

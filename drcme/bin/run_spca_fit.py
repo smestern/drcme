@@ -65,19 +65,13 @@ def equal_ar_size(array1, array2, fill):
     r1, s1 = array1.shape
     r2, s2 = array2.shape
     if s1 > s2:
-       divisor = math.gcd(int(s2+1), int(s1 + 1))
-       fact1 = math.ceiling(s1 / divisor)
-       fact2 = math.ceiling(s2 / divisor)
-       array1 = decimate(array1, fact1, axis=1)
-       array2 = decimate(array2, fact2, axis=1)
+       array1 = signal.resample(array1, s2, axis=1)
+       np.savetxt('a1.csv', array1,delimiter=",", fmt='%12.5f')
+       np.savetxt('a2.csv', array2, delimiter=",", fmt='%12.5f')
     elif s2 > s1:
-       divisor = math.gcd(int(s2+1), int(s1 + 1))
-       fact1 = math.ceiling(s1 / divisor)
-       fact2 = math.ceiling(s2 / divisor)
-       array1 = decimate(array1, fact1, axis=1)
-       array2 = decimate(array2, fact2, axis=1)
-    np.savetxt('a1.csv', array1,delimiter=",", fmt='%12.5f')
-    np.savetxt('a2.csv', array2, delimiter=",", fmt='%12.5f')
+       array2 = signal.resample(array2, s1, axis=1)
+       np.savetxt('a1.csv', array1,delimiter=",", fmt='%12.5f')
+       np.savetxt('a2.csv', array2, delimiter=",", fmt='%12.5f')
     return array1, array2
 
 
@@ -125,15 +119,15 @@ def main(params_file, output_dir, output_code, datasets, **kwargs):
                 data_for_spca[k], do[k] = equal_ar_size(data_for_spca[k], do[k],0)
                 data_for_spca[k] = np.vstack([data_for_spca[k], do[k]])
     specimen_ids = np.hstack(specimen_ids_list)
-
-    specimen_ids, data_for_spca = outlierElim(specimen_ids, data_for_spca)
+    ##Outlier Elim? 
+    #specimen_ids, data_for_spca = outlierElim(specimen_ids, data_for_spca)
 
 
     first_key = list(data_for_spca.keys())[0]
     if len(specimen_ids) != data_for_spca[first_key].shape[0]:
         logging.error("Mismatch of specimen id dimension ({:d}) and data dimension ({:d})".format(len(specimen_ids), data_for_spca[first_key].shape[0]))
 
-    ##Outlier Elim?
+    
 
 
 

@@ -3,7 +3,7 @@
     "n_components": 7,
     "nonzero_component_list": [ 400, 350, 400, 350, 350, 375, 350 ],
     "use_corr": false,
-    "range": [ 0, 88 ]
+    "range": [ 0, 148 ]
   },
   "isi_shape": {
     "n_components": 4,
