@@ -4,11 +4,11 @@ from sklearn import manifold
 import logging
 
 
-def combined_tsne(df_1, df_2, n_components=2, perplexity=25, n_iter=20000):
+def combined_tsne(df_1, df_2, n_components=2, perplexity=25, n_iter=20000, learningr=200, earlex=12):
     all_together = np.vstack([df_1.values, df_2.values])
     all_ids = df_1.index.tolist() + df_2.index.tolist()
 
-    tsne = manifold.TSNE(n_components=n_components, init='pca', random_state=0,
+    tsne = manifold.TSNE(n_components=n_components, learning_rate=learningr, early_exaggeration=earlex, init='pca', random_state=0,
                         verbose=2, n_iter=n_iter, perplexity=perplexity)
     Y = tsne.fit_transform(all_together)
 

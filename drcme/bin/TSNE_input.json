@@ -3,6 +3,6 @@
   "spca_file_2": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\sparse_pca_components_test2.csv",
   "output_file": "test.csv",
   "n_components": "2",
-  "perplexity": "7",
-  "n_iter": "20000"
+  "perplexity": "25",
+  "n_iter": "60000"
 }

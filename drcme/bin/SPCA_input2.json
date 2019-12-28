@@ -1,10 +1,11 @@
 {
   "output_dir": "C:\\Users\\SMest\\source\\repos\\",
-  "output_code": "NHP",
+  "output_code": "Mouse_noNorm",
   "params_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\default_spca_params_monkey2.json",
+  "norm_type": "0",
   "datasets": [
     {
-      "fv_h5_file": "C:\\Users\\SMest\\Documents\\fv_test.h5"
+      "fv_h5_file": "C:\\Users\\SMest\\fv_mouse_gen2.h5"
     }
   ]
 }

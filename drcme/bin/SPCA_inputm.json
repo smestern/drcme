@@ -1,19 +1,15 @@
 {
-  "output_dir": "C:\\Users\\SMest\\source\\repos\\",
-  "output_code": "NHP_M_H2_nonorm",
+  "output_file": "C:\\Users\\SMest\\source\\repos\\mergespca.csv",
+  "orig_transform_file": "C:\\Users\\SMest\\source\\repos\\spca_loadings_Mouse_noNorm.pkl",
   "params_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\default_spca_params_monkey2.json",
-  "norm_type": "0",
-  "datasets": [
+  "orig_datasets": [
     {
       "fv_h5_file": "C:\\Users\\SMest\\fv_mouse_gen2.h5",
       "allow_missing_structure": "true",
       "allow_missing_dendrite": "true"
-    },
-    {
-      "fv_h5_file": "C:\\Users\\SMest\\fv_human.h5",
-      "allow_missing_structure": "true",
-      "allow_missing_dendrite": "true"
-    },
+    }
+  ],
+  "new_datasets": [
     {
       "fv_h5_file": "C:\\Users\\SMest\\Documents\\fv_test.h5",
       "allow_missing_structure": "true",

@@ -8,6 +8,7 @@ import logging
 import os
 import json
 from sklearn.impute import SimpleImputer
+from sklearn import preprocessing
 from scipy import signal
 from sklearn.ensemble import IsolationForest
 import math
@@ -27,6 +28,7 @@ class AnalysisParameters(ags.ArgSchema):
     params_file = ags.fields.InputFile(default="C://Users//SMest//source//repos//drcme//drcme//bin//default_spca_params.json")
     output_dir = ags.fields.OutputDir(description="directory for output files")
     output_code = ags.fields.String(description="code for output files")
+    norm_type = ags.fields.Integer(default=0)
     datasets = ags.fields.Nested(DatasetParameters,
                                  required=True,
                                  many=True,
@@ -58,25 +60,42 @@ def outlierElim(ids, data, cont=0.05):
 
 
     
-    
-    
-
-def equal_ar_size(array1, array2, fill):
+def equal_ar_size(array1, array2, label, i):
     r1, s1 = array1.shape
     r2, s2 = array2.shape
     if s1 > s2:
        array1 = signal.resample(array1, s2, axis=1)
-       np.savetxt('a1.csv', array1,delimiter=",", fmt='%12.5f')
-       np.savetxt('a2.csv', array2, delimiter=",", fmt='%12.5f')
+       
     elif s2 > s1:
        array2 = signal.resample(array2, s1, axis=1)
-       np.savetxt('a1.csv', array1,delimiter=",", fmt='%12.5f')
-       np.savetxt('a2.csv', array2, delimiter=",", fmt='%12.5f')
-    return array1, array2
+
+
+    np.savetxt(label + str(i) +'a1.csv', array1,delimiter=",", fmt='%12.5f')
+    np.savetxt(label + str(i) +'a2.csv', array2, delimiter=",", fmt='%12.5f')
+    np.savetxt(label + str(i) +'a1mean.csv', np.vstack((np.mean(array1, axis=0),np.std(array1,axis=0))),delimiter=",", fmt='%12.5f')
+    np.savetxt(label + str(i) +'a2mean.csv', np.vstack((np.mean(array2, axis=0),np.std(array2,axis=0))), delimiter=",", fmt='%12.5f')
+    return array1, array2 
+    
+
+def normalize_ds(array1, norm_type):
+    if norm_type == 1:
+        #Scale to mean waveform
+        scaler = preprocessing.StandardScaler(copy=False)
+        scaler.fit_transform(array1)
+        #array1 = preprocessing.scale(array1, axis=1)
+    elif norm_type == 2:
+        #Scale by z score to pop mean
+        array1 = preprocessing.scale(array1, axis=1)
+    elif norm_type == 3:
+        #manually Scale to mean waveform
+        mean_wave = np.mean(array1, axis=0)
+        mean_std = np.std(array1, axis=0)
+        array1 = (array1 - mean_wave) / mean_std
+    return array1
 
 
 
-def main(params_file, output_dir, output_code, datasets, **kwargs):
+def main(params_file, output_dir, output_code, datasets, norm_type, **kwargs):
 
     # Load data from each dataset
     data_objects = []
@@ -105,8 +124,9 @@ def main(params_file, output_dir, output_code, datasets, **kwargs):
                 nu_m = nu_m[:,:p]
                 print(l)
                 print(p)
-                data_for_spca[l] = imp.fit_transform(nu_m)
-                #data_for_spca[l] = nu_m
+                nu_m = imp.fit_transform(nu_m)
+                data_for_spca[l] = normalize_ds(nu_m, norm_type)
+                
         data_objects.append(data_for_spca)
         specimen_ids_list.append(specimen_ids)
 
@@ -116,7 +136,7 @@ def main(params_file, output_dir, output_code, datasets, **kwargs):
             if k not in data_for_spca:
                 data_for_spca[k] = do[k]
             else:
-                data_for_spca[k], do[k] = equal_ar_size(data_for_spca[k], do[k],0)
+                data_for_spca[k], do[k] = equal_ar_size(data_for_spca[k], do[k], k, i)
                 data_for_spca[k] = np.vstack([data_for_spca[k], do[k]])
     specimen_ids = np.hstack(specimen_ids_list)
     ##Outlier Elim? 
