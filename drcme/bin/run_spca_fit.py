@@ -12,7 +12,7 @@ from sklearn import preprocessing
 from scipy import signal
 from sklearn.ensemble import IsolationForest
 import math
-
+output_fld = "output\\debug\\"
 class DatasetParameters(ags.schemas.DefaultSchema):
     fv_h5_file = ags.fields.InputFile(description="HDF5 file with feature vectors")
     metadata_file = ags.fields.InputFile(description="Metadata file in CSV format", allow_none=True, default=None)
@@ -50,12 +50,12 @@ def outlierElim(ids, data, cont=0.05):
     outlier = u[count_o>3]
     print(outlier)
     _, _, outlier_ind = np.intersect1d(outlier, ids, return_indices=True)
-    np.savetxt('ids_outlier.csv', ids[outlier_ind], delimiter=",", fmt='%12.5f')
+    np.savetxt(output_fld +'ids_outlier.csv', ids[outlier_ind], delimiter=",", fmt='%12.5f')
     ids = np.delete(ids, outlier_ind)
-    np.savetxt('ids_outlierDropped.csv', ids, delimiter=",", fmt='%12.5f')
+    np.savetxt(output_fld + 'ids_outlierDropped.csv', ids, delimiter=",", fmt='%12.5f')
     for x in data:
         data[x] = np.delete(data[x], outlier_ind, axis=0)
-        np.savetxt(x + '_outlierDropped.csv', data[x], delimiter=",", fmt='%12.5f')
+        np.savetxt(output_fld + x + '_outlierDropped.csv', data[x], delimiter=",", fmt='%12.5f')
     return ids, data
 
 
@@ -70,10 +70,10 @@ def equal_ar_size(array1, array2, label, i):
        array2 = signal.resample(array2, s1, axis=1)
 
 
-    np.savetxt(label + str(i) +'a1.csv', array1,delimiter=",", fmt='%12.5f')
-    np.savetxt(label + str(i) +'a2.csv', array2, delimiter=",", fmt='%12.5f')
-    np.savetxt(label + str(i) +'a1mean.csv', np.vstack((np.mean(array1, axis=0),np.std(array1,axis=0))),delimiter=",", fmt='%12.5f')
-    np.savetxt(label + str(i) +'a2mean.csv', np.vstack((np.mean(array2, axis=0),np.std(array2,axis=0))), delimiter=",", fmt='%12.5f')
+    np.savetxt(output_fld + label + str(i) +'a1.csv', array1,delimiter=",", fmt='%12.5f')
+    np.savetxt(output_fld + label + str(i) +'a2.csv', array2, delimiter=",", fmt='%12.5f')
+    np.savetxt(output_fld + label + str(i) +'a1mean.csv', np.vstack((np.mean(array1, axis=0),np.std(array1,axis=0))),delimiter=",", fmt='%12.5f')
+    np.savetxt(output_fld + label + str(i) +'a2mean.csv', np.vstack((np.mean(array2, axis=0),np.std(array2,axis=0))), delimiter=",", fmt='%12.5f')
     return array1, array2 
     
 

@@ -5,6 +5,7 @@ from sklearn.externals import joblib
 import drcme.load_data as ld
 from drcme.spca_transform import *
 import logging
+from scipy import signal
 from sklearn.impute import SimpleImputer
 
 class DatasetParameters(ags.schemas.DefaultSchema):
@@ -113,6 +114,7 @@ def main(orig_transform_file, orig_datasets, new_datasets, params_file,
     for i, do in enumerate(new_data_objects):
          for k in do:
             if k not in data_for_spca:
+                _, do[k] = equal_ar_size(orig_data_for_spca[k], do[k], k, i)
                 data_for_spca[k] = do[k]
             else:
                 data_for_spca[k] = np.vstack([data_for_spca[k], do[k]])
@@ -125,6 +127,16 @@ def main(orig_transform_file, orig_datasets, new_datasets, params_file,
     new_combo_df = pd.DataFrame(new_combo, index=new_ids)
     new_combo_df.to_csv(output_file)
 
+def equal_ar_size(array1, array2, label, i):
+    r1, s1 = array1.shape
+    r2, s2 = array2.shape
+    if s1 > s2:
+       array1 = signal.resample(array1, s2, axis=1)
+       
+    elif s2 > s1:
+       array2 = signal.resample(array2, s1, axis=1)
+
+    return array1, array2 
 
 if __name__ == "__main__":
     module = ags.ArgSchemaParser(schema_type=SpcaTransformParameters)

@@ -3,6 +3,7 @@ import argschema as ags
 import drcme.tsne as tsne
 import sklearn.semi_supervised as sm
 import numpy as np
+
 class ComboTsneParameters(ags.ArgSchema):
     spca_file_1 = ags.fields.InputFile()
     labels_file = ags.fields.InputFile()

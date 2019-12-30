@@ -1,0 +1,6 @@
+{
+  "ground_truth": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\gtlabelsmouse.csv",
+  "labels_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\etypes_test_merged.csv",
+  "output_file": "metrics.csv"
+
+}
