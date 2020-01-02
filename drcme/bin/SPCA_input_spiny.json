@@ -1,24 +1,19 @@
 {
   "output_dir": "C:\\Users\\SMest\\source\\repos\\",
-  "output_code": "NHP_M_H2_flatnorm_aspiny",
+  "output_code": "NHP_M_H2_nonorm_spiny",
   "params_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\default_spca_params_monkey2.json",
-  "labels_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\etypes_aspiny.csv",
+  "labels_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\etypes_spiny.csv",
   "norm_type": "1",
   "datasets": [
     {
       "fv_h5_file": "C:\\Users\\SMest\\fv_mouse_gen2.h5",
       "metadata_file": "C:\\Users\\SMest\\Documents\\clustering-data\\cell_types_specimen_details_NEW CLUSTERS 12_16.csv",
-      "dendrite_type": "aspiny"
+      "dendrite_type": "spiny"
     },
     {
       "fv_h5_file": "C:\\Users\\SMest\\fv_human.h5",
       "metadata_file": "C:\\Users\\SMest\\Documents\\clustering-data\\cell_types_specimen_details_NEW CLUSTERS 12_16.csv",
-      "dendrite_type": "aspiny"
-    },
-    {
-      "fv_h5_file": "C:\\Users\\SMest\\Documents\\fv_test_6s.h5",
-      "allow_missing_structure": "true",
-      "allow_missing_dendrite": "true"
+      "dendrite_type": "spiny"
     }
   ]
 }

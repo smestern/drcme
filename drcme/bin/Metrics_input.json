@@ -1,6 +1,7 @@
 {
-  "ground_truth": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\gtlabelsmouse.csv",
-  "labels_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\etypes_test_merged.csv",
-  "output_file": "metrics.csv"
-
+  "ground_truth": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\gtlabelsmouse_aspiny.csv",
+  "labels_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\etypes_test.csv",
+  "spca_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\sparse_pca_components_Mouse_noNorm_aspiny.csv",
+  "output_file": "metrics.csv",
+  "cluster_drop": []
 }

@@ -16,6 +16,7 @@ output_fld = "output\\debug\\"
 class DatasetParameters(ags.schemas.DefaultSchema):
     fv_h5_file = ags.fields.InputFile(description="HDF5 file with feature vectors")
     metadata_file = ags.fields.InputFile(description="Metadata file in CSV format", allow_none=True, default=None)
+    
     dendrite_type = ags.fields.String(default="all", validate=lambda x: x in ["all", "spiny", "aspiny"])
     allow_missing_structure = ags.fields.Boolean(required=False, default=False)
     allow_missing_dendrite = ags.fields.Boolean(required=False, default=False)
@@ -29,6 +30,7 @@ class AnalysisParameters(ags.ArgSchema):
     output_dir = ags.fields.OutputDir(description="directory for output files")
     output_code = ags.fields.String(description="code for output files")
     norm_type = ags.fields.Integer(default=0)
+    labels_file = ags.fields.InputFile(description="label files", allow_none=True, default=None)
     datasets = ags.fields.Nested(DatasetParameters,
                                  required=True,
                                  many=True,
@@ -80,7 +82,7 @@ def equal_ar_size(array1, array2, label, i):
 def normalize_ds(array1, norm_type):
     if norm_type == 1:
         #Scale to mean waveform
-        scaler = preprocessing.RobustScaler(copy=False)
+        scaler = preprocessing.StandardScaler(copy=False)
         scaler.fit_transform(array1)
         #array1 = preprocessing.scale(array1, axis=1)
     elif norm_type == 2:
@@ -88,13 +90,14 @@ def normalize_ds(array1, norm_type):
         array1 = preprocessing.scale(array1, axis=1)
     elif norm_type == 3:
         #manually Scale to mean waveform
-        normalize = preprocessing.Normalizer(copy=False)
-        normalize.fit_transform(array1)
+        mean_wave = np.mean(array1, axis=0)
+        mean_std = np.std(array1, axis=0)
+        array1 = (array1 - mean_wave) / mean_std
     return array1
 
 
 
-def main(params_file, output_dir, output_code, datasets, norm_type, **kwargs):
+def main(params_file, output_dir, output_code, datasets, norm_type, labels_file, **kwargs):
 
     # Load data from each dataset
     data_objects = []
@@ -128,7 +131,8 @@ def main(params_file, output_dir, output_code, datasets, norm_type, **kwargs):
                 
         data_objects.append(data_for_spca)
         specimen_ids_list.append(specimen_ids)
-
+    specimen_ids = np.hstack(specimen_ids_list)
+    
     data_for_spca = {}
     for i, do in enumerate(data_objects):
         for k in do:
@@ -137,7 +141,7 @@ def main(params_file, output_dir, output_code, datasets, norm_type, **kwargs):
             else:
                 data_for_spca[k], do[k] = equal_ar_size(data_for_spca[k], do[k], k, i)
                 data_for_spca[k] = np.vstack([data_for_spca[k], do[k]])
-    specimen_ids = np.hstack(specimen_ids_list)
+    
     ##Outlier Elim? 
     #specimen_ids, data_for_spca = outlierElim(specimen_ids, data_for_spca)
 
@@ -145,30 +149,30 @@ def main(params_file, output_dir, output_code, datasets, norm_type, **kwargs):
     first_key = list(data_for_spca.keys())[0]
     if len(specimen_ids) != data_for_spca[first_key].shape[0]:
         logging.error("Mismatch of specimen id dimension ({:d}) and data dimension ({:d})".format(len(specimen_ids), data_for_spca[first_key].shape[0]))
-
+    labels = pd.read_csv(labels_file, index_col=0)
+    uni_labels = np.unique(labels.values)
+    ids_list = labels.index.values
     
-
-
-
+    if np.array_equal(ids_list, specimen_ids):
+        print("Same Ids loaded... Proceeding")
+        for p in data_for_spca:
+            labels_means = pd.DataFrame()
+            arr_data = data_for_spca[p]
+            for x in uni_labels:
+                indx = np.where(labels['0']==x)[0]
+                mean = pd.Series(data=np.mean(arr_data[indx], axis=0), name=('Cluster ' + str(x) + ' mean'))
+                std = pd.Series(data=np.std(arr_data[indx], axis=0), name=('Cluster ' + str(x) + ' std'))
+                n = pd.Series(data=np.std(arr_data[indx], axis=0), name=('Cluster ' + str(x) + ' std'))
+                labels_means = labels_means.append(mean, ignore_index=True)
+                labels_means = labels_means.append(std, ignore_index=True)
+                
+            labels_means.to_csv(output_fld + p +'_cluster_mean.csv')
     logging.info("Proceeding with %d cells", len(specimen_ids))
 
 
 
 
-    # Load parameters
-    spca_zht_params, _ = ld.define_spca_parameters(filename=params_file)
-
-    # Run sPCA
-    subset_for_spca = sf.select_data_subset(data_for_spca, spca_zht_params)
-    spca_results = sf.spca_on_all_data(subset_for_spca, spca_zht_params)
-    combo, component_record = sf.consolidate_spca(spca_results)
-
-    logging.info("Saving results...")
-    joblib.dump(spca_results, os.path.join(output_dir, "spca_loadings_{:s}.pkl".format(output_code)))
-    combo_df = pd.DataFrame(combo, index=specimen_ids)
-    combo_df.to_csv(os.path.join(output_dir, "sparse_pca_components_{:s}.csv".format(output_code)))
-    with open(os.path.join(output_dir, "spca_components_used_{:s}.json".format(output_code)), "w") as f:
-        json.dump(component_record, f, indent=4)
+   
     logging.info("Done.")
 
 
