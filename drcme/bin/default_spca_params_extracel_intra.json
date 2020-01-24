@@ -1,0 +1,8 @@
+{
+  "first_ap_dv": {
+    "n_components": 10,
+    "nonzero_component_list": [ 175, 225, 250, 400, 350, 400, 350, 350, 375, 350 ],
+    "use_corr": false,
+    "range": null
+  }
+}

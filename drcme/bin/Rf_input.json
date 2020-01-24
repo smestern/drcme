@@ -1,0 +1,7 @@
+{
+  "spca_file_1": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\sparse_pca_components_test1.csv",
+  "labels_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\gtlabels.csv",
+  "output_file": "testlabels.csv",
+  "gamma": "60",
+   "n_neighbours": "150"
+}

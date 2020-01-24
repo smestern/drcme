@@ -7,7 +7,8 @@ import joblib
 import logging
 import os
 import json
-from sklearn.impute import SimpleImputer
+from ipfx.feature_vectors import _subsample_average
+from sklearn.impute import KNNImputer
 from sklearn import preprocessing
 from scipy import signal
 from sklearn.ensemble import IsolationForest
@@ -68,28 +69,30 @@ def equal_ar_size(array1, array2, label, i):
        
     elif s2 > s1:
        array2 = signal.resample(array2, s1, axis=1)
-
-
-    np.savetxt(output_fld + label + str(i) +'a1.csv', array1,delimiter=",", fmt='%12.5f')
-    np.savetxt(output_fld + label + str(i) +'a2.csv', array2, delimiter=",", fmt='%12.5f')
-    np.savetxt(output_fld + label + str(i) +'a1mean.csv', np.vstack((np.mean(array1, axis=0),np.std(array1,axis=0))),delimiter=",", fmt='%12.5f')
-    np.savetxt(output_fld + label + str(i) +'a2mean.csv', np.vstack((np.mean(array2, axis=0),np.std(array2,axis=0))), delimiter=",", fmt='%12.5f')
+ 
+ 
     return array1, array2 
     
 
 def normalize_ds(array1, norm_type):
     if norm_type == 1:
         #Scale to mean waveform
-        scaler = preprocessing.RobustScaler(copy=False)
+        scaler = preprocessing.StandardScaler(copy=False)
         scaler.fit_transform(array1)
         #array1 = preprocessing.scale(array1, axis=1)
     elif norm_type == 2:
-        #Scale by z score to pop mean
+        
         array1 = preprocessing.scale(array1, axis=1)
     elif norm_type == 3:
         #manually Scale to mean waveform
         normalize = preprocessing.Normalizer(copy=False)
+        scaler = preprocessing.StandardScaler(copy=False)
         normalize.fit_transform(array1)
+        scaler.fit_transform(array1)
+    elif norm_type == 4:
+        #Scale by min max within sample
+        array1 = preprocessing.minmax_scale(array1, (-1,1), axis=1, copy=False)
+
     return array1
 
 
@@ -99,7 +102,7 @@ def main(params_file, output_dir, output_code, datasets, norm_type, **kwargs):
     # Load data from each dataset
     data_objects = []
     specimen_ids_list = []
-    imp = SimpleImputer(missing_values=0, strategy='mean', copy=False,)
+    imp = KNNImputer(copy=False)
     
     for ds in datasets:
         if len(ds["limit_to_cortical_layers"]) == 0:
@@ -117,14 +120,13 @@ def main(params_file, output_dir, output_code, datasets, norm_type, **kwargs):
                                             params_file=params_file)
         for l, m in data_for_spca.items():
             if type(m) == np.ndarray:
-                nu_m = np.nan_to_num(m)
+                nu_m = m
                 p = np.nonzero(nu_m[:,:])[1]
                 p = max(p)
-                nu_m = nu_m[:,:p]
+                
                 print(l)
                 print(p)
-                nu_m = imp.fit_transform(nu_m)
-                data_for_spca[l] = normalize_ds(nu_m, norm_type)
+                data_for_spca[l] = nu_m
                 
         data_objects.append(data_for_spca)
         specimen_ids_list.append(specimen_ids)
@@ -133,11 +135,22 @@ def main(params_file, output_dir, output_code, datasets, norm_type, **kwargs):
     for i, do in enumerate(data_objects):
         for k in do:
             if k not in data_for_spca:
+                do[k] = normalize_ds(do[k], norm_type)
                 data_for_spca[k] = do[k]
             else:
                 data_for_spca[k], do[k] = equal_ar_size(data_for_spca[k], do[k], k, i)
+                
+                do[k] = normalize_ds(do[k], norm_type)
+                 
                 data_for_spca[k] = np.vstack([data_for_spca[k], do[k]])
+            np.savetxt(output_fld + k + str(i) +'.csv', do[k], delimiter=",", fmt='%12.5f')
+            np.savetxt(output_fld + k + str(i) +'mean.csv', np.vstack((np.nanmean(do[k], axis=0),np.nanstd(do[k],axis=0))),delimiter=",", fmt='%12.5f')
     specimen_ids = np.hstack(specimen_ids_list)
+    ### Now run through again and impute missing:
+    for l in data_for_spca:
+        nu_m = data_for_spca[l]
+        nu_m = imp.fit_transform(nu_m)
+        data_for_spca[l] = nu_m
     ##Outlier Elim? 
     #specimen_ids, data_for_spca = outlierElim(specimen_ids, data_for_spca)
 

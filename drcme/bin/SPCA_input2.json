@@ -1,14 +1,15 @@
 {
   "output_dir": "C:\\Users\\SMest\\source\\repos\\",
-  "output_code": "Mouse_noNorm_spiny",
+  "output_code": "Mouse_noNorm_aspiny",
   "params_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\default_spca_params_mouse.json",
-  
+  "labels_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\etypes_aspiny_mouse.csv",
+  "spca_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\sparse_pca_components_Mouse_noNorm_aspiny.csv",
   "norm_type": " 1",
   "datasets": [
     {
       "fv_h5_file": "C:\\Users\\SMest\\fv_mouse_gen2.h5",
       "metadata_file": "C:\\Users\\SMest\\Documents\\clustering-data\\cell_types_specimen_details_NEW CLUSTERS 12_16.csv",
-      "dendrite_type": "all"
+      "dendrite_type": "aspiny"
     }
   ]
 }

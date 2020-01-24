@@ -1,6 +1,7 @@
 import pandas as pd
 import argschema as ags
 import drcme.tsne as tsne
+import matplotlib.pyplot as plt
 
 
 class ComboTsneParameters(ags.ArgSchema):
@@ -19,6 +20,7 @@ def main(spca_file_1, output_file,
     df_1 = df_1.iloc[:row]
     #learning_rate=10, early_exaggeration=500
     combo_df = tsne.combined_tsne(df_1, df_2, n_components, perplexity, n_iter)
+    combo_df.plot.scatter(x='x', y='y')
     combo_df.to_csv(output_file)
 
 

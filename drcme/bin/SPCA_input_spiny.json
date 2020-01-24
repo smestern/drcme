@@ -3,7 +3,7 @@
   "output_code": "NHP_M_H2_nonorm_spiny",
   "params_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\default_spca_params_monkey2.json",
   "labels_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\etypes_spiny.csv",
-  "norm_type": "1",
+  "norm_type": "0",
   "datasets": [
     {
       "fv_h5_file": "C:\\Users\\SMest\\fv_mouse_gen2.h5",
