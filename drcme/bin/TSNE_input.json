@@ -1,7 +1,7 @@
 {
-  "spca_file_1": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\sparse_pca_components_NHP_extra_cell_comb.csv",
+  "spca_file_1": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\sparse_pca_components_extra_cell_NP.csv",
   "spca_file_2": "",
-  "output_file": "test_extra_comb.csv",
+  "output_file": "test_extra_np.csv",
   "n_components": "2",
   "perplexity": "25",
   "n_iter": "60000"

@@ -164,7 +164,7 @@ def main(params_file, output_dir, output_code, datasets, norm_type, labels_file,
     uni_labels = np.unique(labels.values)
     ids_list = labels.index.values
     
-    if np.array_equal(ids_list, specimen_ids):
+    if labels.shape[0] == ids_list.shape[0]:
         print("Same Ids loaded... Proceeding")
         logging.info("Proceeding with %d cells", len(specimen_ids))
         for p in data_for_spca:

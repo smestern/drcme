@@ -21,6 +21,7 @@ def main(spca_file_1, output_file,
     #learning_rate=10, early_exaggeration=500
     combo_df = tsne.combined_tsne(df_1, df_2, n_components, perplexity, n_iter)
     combo_df.plot.scatter(x='x', y='y')
+    plt.show()
     combo_df.to_csv(output_file)
 
 

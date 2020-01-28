@@ -7,9 +7,9 @@ import logging
 def combined_tsne(df_1, df_2, n_components=2, perplexity=25, n_iter=20000, learningr=10, earlex=700):
     all_together = np.vstack([df_1.values, df_2.values])
     all_ids = df_1.index.tolist() + df_2.index.tolist()
-
+    #lr = 10, earlex =700
     tsne = manifold.TSNE(n_components=n_components, learning_rate=learningr, early_exaggeration=earlex, init='pca', random_state=0,
-                        verbose=2, n_iter=n_iter, perplexity=perplexity)
+                        verbose=2, n_iter=n_iter, perplexity=perplexity, n_jobs=-1)
     Y = tsne.fit_transform(all_together)
 
     return pd.DataFrame({"x": Y[:, 0], "y": Y[:, 1]}, index=all_ids)
