@@ -1,7 +1,7 @@
 {
-  "spca_file_1": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\sparse_pca_components_NHP_M_H2_flatnorm_aspiny.csv",
-  "labels_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\gtlabelsmouse_aspiny.csv",
+  "spca_file_1": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\sparse_pca_components_NHP_extra_cell_comb.csv",
+  "labels_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\gt_labels_np.csv",
   "output_file": "testlabels.csv",
   "gamma": "60",
-  "n_neighbours": "150"
+  "n_neighbours": "20"
 }

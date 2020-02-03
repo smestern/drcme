@@ -1,5 +1,5 @@
 {
-  "components_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\sparse_pca_components_extra_cell_NP.csv",
+  "components_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\sparse_pca_components_NHP_extra_cell_comb.csv",
   "tau_file": "tau_extra_comb_com_2.csv",
   "labels_file": "labels.csv",
   "bic_file": "bic_extra_comb_com_2.csv",

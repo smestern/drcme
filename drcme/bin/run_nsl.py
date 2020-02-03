@@ -7,12 +7,19 @@ import joblib
 import logging
 import os
 import json
+import matplotlib.pyplot as plt
 from ipfx.feature_vectors import _subsample_average
 from sklearn.impute import KNNImputer
 from sklearn import preprocessing
 from scipy import signal
 from sklearn.ensemble import IsolationForest
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 import math
+import neural_structured_learning as nsl
+import tensorflow as tf
+import cleanlab
+
 output_fld = "output\\debug\\"
 class DatasetParameters(ags.schemas.DefaultSchema):
     fv_h5_file = ags.fields.InputFile(description="HDF5 file with feature vectors")
@@ -29,7 +36,9 @@ class AnalysisParameters(ags.ArgSchema):
     params_file = ags.fields.InputFile(default="C://Users//SMest//source//repos//drcme//drcme//bin//default_spca_params.json")
     output_dir = ags.fields.OutputDir(description="directory for output files")
     output_code = ags.fields.String(description="code for output files")
+    spca_file = ags.fields.InputFile()
     norm_type = ags.fields.Integer(default=0)
+    labels_file = ags.fields.InputFile(description="label files", allow_none=True, default=None)
     datasets = ags.fields.Nested(DatasetParameters,
                                  required=True,
                                  many=True,
@@ -59,6 +68,23 @@ def outlierElim(ids, data, cont=0.05):
         np.savetxt(output_fld + x + '_outlierDropped.csv', data[x], delimiter=",", fmt='%12.5f')
     return ids, data
 
+def labelnoise(spca, labels, threshold=0.7):
+    ##Fit with random forest
+    lb_idx = np.where(labels.values != -1)[0]
+    x = spca.values[lb_idx]
+    lb = np.ravel(labels.values[lb_idx])
+    
+    rf = RandomForestClassifier(n_estimators=10, oob_score=True,
+                                             random_state=0)
+    rf.fit(x, lb)
+    prob = np.amax(rf.predict_proba(x), axis=1)   
+        # STEP 1 - Compute confident joint
+
+    prob_below = np.where(prob < threshold, -1, lb)
+
+
+    labels.values[lb_idx] = prob_below.reshape(-1,1)
+    return labels.values
 
     
 def equal_ar_size(array1, array2, label, i):
@@ -81,7 +107,6 @@ def normalize_ds(array1, norm_type):
         scaler.fit_transform(array1)
         #array1 = preprocessing.scale(array1, axis=1)
     elif norm_type == 2:
-        
         array1 = preprocessing.scale(array1, axis=1)
         scaler = preprocessing.StandardScaler(copy=False)
         scaler.fit_transform(array1)
@@ -95,24 +120,18 @@ def normalize_ds(array1, norm_type):
     elif norm_type == 4:
         #Scale by min max within sample
         array1 = preprocessing.minmax_scale(array1, (-1,1), axis=1, copy=False)
-    elif norm_type == 5:
-        #Scale by min max within sample
-        baseline = np.mean(array1[:90], axis=0)
-        array1 = array1 - baseline
 
-        
-        
     return array1
 
 
 
-def main(params_file, output_dir, output_code, datasets, norm_type, **kwargs):
+def main(params_file, output_dir, output_code, datasets, norm_type, labels_file, spca_file, **kwargs):
 
     # Load data from each dataset
     data_objects = []
     specimen_ids_list = []
     imp = KNNImputer(copy=False)
-    
+    pad_len = 0
     for ds in datasets:
         if len(ds["limit_to_cortical_layers"]) == 0:
             limit_to_cortical_layers = None
@@ -135,65 +154,135 @@ def main(params_file, output_dir, output_code, datasets, norm_type, **kwargs):
                 
                 print(l)
                 print(p)
+                if p > pad_len:
+                    pad_len = p
                 data_for_spca[l] = nu_m
                 
         data_objects.append(data_for_spca)
         specimen_ids_list.append(specimen_ids)
+    HPARAMS = HParams()
 
     data_for_spca = {}
     for i, do in enumerate(data_objects):
         for k in do:
             if k not in data_for_spca:
-                if 'first' in k:
-                    do[k] = normalize_ds(do[k], norm_type)
+                do[k] = normalize_ds(do[k], norm_type)
                 data_for_spca[k] = do[k]
             else:
                 data_for_spca[k], do[k] = equal_ar_size(data_for_spca[k], do[k], k, i)
-                if 'first' in k:
-                    do[k] = normalize_ds(do[k], norm_type)
+                
+                do[k] = normalize_ds(do[k], norm_type)
                  
                 data_for_spca[k] = np.vstack([data_for_spca[k], do[k]])
             np.savetxt(output_fld + k + str(i) +'.csv', do[k], delimiter=",", fmt='%12.5f')
             np.savetxt(output_fld + k + str(i) +'mean.csv', np.vstack((np.nanmean(do[k], axis=0),np.nanstd(do[k],axis=0))),delimiter=",", fmt='%12.5f')
     specimen_ids = np.hstack(specimen_ids_list)
+    labels = pd.read_csv(labels_file, index_col=0)
+    
+    df_s = pd.read_csv(spca_file, index_col=0)
+
+    #labels['0'] = labelnoise(df_s, labels)
+    train_ind = np.where(labels['0'] > -1)[0]
+    pred_ind = np.where(labels['0'] == -1)[0]
+    train_label = labels.iloc[train_ind]
+    pred_label = labels.iloc[pred_ind]
     ### Now run through again and impute missing:
+    train_data = {}
+    pred_data = {}
     for l in data_for_spca:
         nu_m = data_for_spca[l]
         nu_m = imp.fit_transform(nu_m)
+        if nu_m.shape[1] < pad_len:
+            pad_wid = (pad_len - nu_m.shape[1]) + 1
+            nu_m = np.hstack((nu_m, np.zeros((nu_m.shape[0], pad_wid))))
+        train_data[l] = nu_m[train_ind]
+        pred_data[l] = nu_m[pred_ind]
         data_for_spca[l] = nu_m
     ##Outlier Elim? 
     #specimen_ids, data_for_spca = outlierElim(specimen_ids, data_for_spca)
-
+    HPARAMS.input_shape =  [pad_len + 1,1, len(data_for_spca)]
+    full_data = np.dstack((data_for_spca[i] for i in sorted(data_for_spca.keys())))
+    train_data = np.dstack((train_data[i] for i in sorted(train_data.keys())))
+    pred_data = np.dstack((pred_data[i] for i in sorted(pred_data.keys())))
+    train_dataset = tf.data.Dataset.from_tensor_slices(train_data)
+    pred_dataset = tf.data.Dataset.from_tensor_slices((pred_data, pred_label.values))
+    for feat, targ in pred_dataset.take(5):
+        print(feat.numpy())
 
     first_key = list(data_for_spca.keys())[0]
     if len(specimen_ids) != data_for_spca[first_key].shape[0]:
         logging.error("Mismatch of specimen id dimension ({:d}) and data dimension ({:d})".format(len(specimen_ids), data_for_spca[first_key].shape[0]))
 
     
-
-
+    x_train, y_train = train_dataset, train_label.values
+   
 
     logging.info("Proceeding with %d cells", len(specimen_ids))
+    
+    base_model = tf.keras.Sequential([
+    tf.keras.Input((train_data.shape[1], train_data.shape[2]), name='feature'),
+    tf.keras.layers.Flatten(),
+    tf.keras.layers.Dense(128, activation=tf.nn.relu),
+    tf.keras.layers.Dense(10, activation=tf.nn.softmax)
+        ])
+    base_model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+    #base_model.fit({'feature': x_train, 'label': np.ravel(y_train)}, batch_size=32, epochs=5)
+    #results = base_model.evaluate({'feature': x_train, 'label': y_train}, batch_size=32, epochs=5)
+    #named_results = dict(zip(base_model.metrics_names, results))
+   # print('\naccuracy:', named_results['accuracy'])
 
-
-
-
-    # Load parameters
-    spca_zht_params, _ = ld.define_spca_parameters(filename=params_file)
-
-    # Run sPCA
-    subset_for_spca = sf.select_data_subset(data_for_spca, spca_zht_params)
-    spca_results = sf.spca_on_all_data(subset_for_spca, spca_zht_params)
-    combo, component_record = sf.consolidate_spca(spca_results)
-
+    # Wrap the model with adversarial regularization. 
+    adv_config = nsl.configs.make_adv_reg_config(multiplier=0.2, adv_step_size=0.05) 
+    adv_model = nsl.keras.AdversarialRegularization(base_model,
+        adv_config=adv_config)
+    # Compile, train, and evaluate. 
+    full_labels = np.where(labels.values != -1, labels.values, (np.unique(labels.values)[-1] + 1))
+    adv_model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy']) 
+    history = adv_model.fit({'feature': train_data, 'label': np.ravel(train_label.values)}, batch_size=32, epochs=20) 
+    adv_model.evaluate({'feature': train_data, 'label': np.ravel(train_label.values)})
+    pred_labels_prob = adv_model.predict({'feature': full_data, 'label':full_labels })
+    pred_labels = np.argmax(pred_labels_prob, axis=1)
     logging.info("Saving results...")
-    joblib.dump(spca_results, os.path.join(output_dir, "spca_loadings_{:s}.pkl".format(output_code)))
-    combo_df = pd.DataFrame(combo, index=specimen_ids)
-    combo_df.to_csv(os.path.join(output_dir, "sparse_pca_components_{:s}.csv".format(output_code)))
-    with open(os.path.join(output_dir, "spca_components_used_{:s}.json".format(output_code)), "w") as f:
-        json.dump(component_record, f, indent=4)
+    labels['0'] = pred_labels
+    
+    
+    labels.to_csv(output_code + 'NSL_pred.csv')
     logging.info("Done.")
 
+
+class HParams(object):
+  def __init__(self):
+    self.input_shape = [28, 28, 1]
+    self.num_classes = 6
+    self.conv_filters = [32, 64, 64]
+    self.kernel_size = (3, 3)
+    self.pool_size = (2, 2)
+    self.num_fc_units = [64]
+    self.batch_size = 32
+    self.epochs = 5
+    self.adv_multiplier = 0.2
+    self.adv_step_size = 0.2
+    self.adv_grad_norm = 'infinity'
+
+def build_base_model(hparams):
+  """Builds a model according to the architecture defined in `hparams`."""
+  inputs = tf.keras.Input(
+      shape=hparams.input_shape, dtype=tf.float32)
+
+  x = inputs
+  for i, num_filters in enumerate(hparams.conv_filters):
+    x = tf.keras.layers.Conv2D(
+        num_filters, hparams.kernel_size, activation='relu', padding='same')(
+            x)
+    if i < len(hparams.conv_filters) - 1:
+      # max pooling between convolutional layers
+      x = tf.keras.layers.MaxPooling2D(hparams.pool_size, padding='same')(x)
+  x = tf.keras.layers.Flatten()(x)
+  for num_units in hparams.num_fc_units:
+    x = tf.keras.layers.Dense(num_units, activation='relu')(x)
+  pred = tf.keras.layers.Dense(hparams.num_classes, activation='softmax')(x)
+  model = tf.keras.Model(inputs=inputs, outputs=pred)
+  return model
 
 if __name__ == "__main__":
     module = ags.ArgSchemaParser(schema_type=AnalysisParameters)

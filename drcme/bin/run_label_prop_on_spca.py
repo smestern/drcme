@@ -18,12 +18,15 @@ def main(spca_file_1, labels_file, output_file,
     df_1 = pd.read_csv(spca_file_1, index_col=0).to_numpy()
     y_gt = pd.read_csv(labels_file, index_col=0).to_numpy().ravel()
     output_df = pd.DataFrame()
-    prop = sm.LabelSpreading(kernel='knn', n_neighbors=n_neighbours, gamma=gamma, max_iter=n_iter, n_jobs=-1)
+    print('Data loaded...')
+    print('Spreading labels')
+    prop = sm.LabelSpreading(kernel='knn', n_neighbors=n_neighbours, gamma=gamma, alpha=0.7, max_iter=n_iter, n_jobs=-1)
     prop.fit(df_1, y_gt)
     output = prop.transduction_.reshape(-1,1)  
     output_prob = prop.predict_proba(df_1)
     output_dist = prop.label_distributions_
-    np.savetxt("label_prop.csv", np.hstack((output,output_prob,output_dist)), delimiter=',')
+    output_pred = prop.predict(df_1).reshape(-1,1)
+    np.savetxt(output_file, np.hstack((output,output_prob,output_dist, output_pred)), delimiter=',')
 
 
 if __name__ == "__main__":
