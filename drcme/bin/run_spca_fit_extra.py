@@ -7,6 +7,8 @@ import joblib
 import logging
 import os
 import json
+import matplotlib.pyplot as plt
+import drcme.umap as umap
 from ipfx.feature_vectors import _subsample_average
 from sklearn.impute import KNNImputer
 from sklearn import preprocessing
@@ -64,6 +66,8 @@ def outlierElim(ids, data, cont=0.05):
 def equal_ar_size(array1, array2, label, i):
     r1, s1 = array1.shape
     r2, s2 = array2.shape
+    min1 = np.argmin(array1, axis=1)
+    min2 = np.argmin(array2, axis=1)
     if s1 > s2:
        array1 = signal.resample(array1, s2, axis=1)
        
@@ -91,16 +95,17 @@ def normalize_ds(array1, norm_type):
         scaler = preprocessing.StandardScaler(copy=False)
         np.nan_to_num(array1, copy=False)
         normalize.fit_transform(array1)
-        #scaler.fit_transform(array1)
+        scaler.fit_transform(array1)
     elif norm_type == 4:
         #Scale by min max within sample
         array1 = preprocessing.minmax_scale(array1, (-1,1), axis=1, copy=False)
     elif norm_type == 5:
         #Scale by min max within sample
-        baseline = np.mean(array1[:90], axis=0)
-        array1 = array1 - baseline
+        normalize = preprocessing.Normalizer(copy=False)
 
-        
+        baseline = np.mean(array1[:,:30], axis=1).reshape(-1,1)
+        array1 = array1 - baseline
+        array1 = preprocessing.minmax_scale(array1, (-1,1), axis=1, copy=False)
         
     return array1
 
@@ -132,7 +137,9 @@ def main(params_file, output_dir, output_code, datasets, norm_type, **kwargs):
                 nu_m = m
                 p = np.nonzero(nu_m[:,:])[1]
                 p = max(p)
-                
+                filename = ds["fv_h5_file"]
+                if 'INTRA' not in filename:
+                    nu_m = nu_m[:,30:-1]
                 print(l)
                 print(p)
                 data_for_spca[l] = nu_m
@@ -144,13 +151,13 @@ def main(params_file, output_dir, output_code, datasets, norm_type, **kwargs):
     for i, do in enumerate(data_objects):
         for k in do:
             if k not in data_for_spca:
-                if 'first' in k:
-                    do[k] = normalize_ds(do[k], norm_type)
+                
+                do[k] = normalize_ds(do[k], norm_type)
                 data_for_spca[k] = do[k]
             else:
                 data_for_spca[k], do[k] = equal_ar_size(data_for_spca[k], do[k], k, i)
-                if 'first' in k:
-                    do[k] = normalize_ds(do[k], norm_type)
+                
+                do[k] = normalize_ds(do[k], norm_type)
                  
                 data_for_spca[k] = np.vstack([data_for_spca[k], do[k]])
             np.savetxt(output_fld + k + str(i) +'.csv', do[k], delimiter=",", fmt='%12.5f')
@@ -190,6 +197,13 @@ def main(params_file, output_dir, output_code, datasets, norm_type, **kwargs):
     joblib.dump(spca_results, os.path.join(output_dir, "spca_loadings_{:s}.pkl".format(output_code)))
     combo_df = pd.DataFrame(combo, index=specimen_ids)
     combo_df.to_csv(os.path.join(output_dir, "sparse_pca_components_{:s}.csv".format(output_code)))
+    row = int((len(combo_df.index) / 2))
+    df_2 = combo_df.iloc[row:]
+    df_1 = combo_df.iloc[:row]
+    _df = umap.combined_umap(df_1, df_2)
+    _df.plot.scatter(x='x', y='y')
+    plt.show()
+    _df.to_csv(output_dir + 'umap_'+ output_code)
     with open(os.path.join(output_dir, "spca_components_used_{:s}.json".format(output_code)), "w") as f:
         json.dump(component_record, f, indent=4)
     logging.info("Done.")

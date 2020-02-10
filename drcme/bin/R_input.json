@@ -1,15 +1,15 @@
 {
-  "components_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\sparse_pca_components_NHP_extra_cell_comb.csv",
-  "tau_file": "tau_extra_comb_com_2.csv",
+  "components_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\sparse_pca_components_PVN_noNorm.csv",
+  "tau_file": "tau_extra_PVN_com_3.csv",
   "labels_file": "labels.csv",
-  "bic_file": "bic_extra_comb_com_2.csv",
-  "merge_info_file": "merge_extra_comb_com_2file.csv",
-  "post_merge_tau_file": "post_tau_extra_comb_com_2.csv",
+  "bic_file": "bic_extra_PVN_com_3.csv",
+  "merge_info_file": "merge_extra_PVN_com_3file.csv",
+  "post_merge_tau_file": "post_tau_extra_PVN_com_3.csv",
   "post_merge_labels_file": "post_merge_labels.csv",
-  "jaccard_file": "jc_extra_comb_com_2.csv",
-  "etypes_file": "etypes_extra_comb_com_2.csv",
+  "jaccard_file": "jc_extra_PVN_com_3.csv",
+  "etypes_file": "etypes_extra_PVN_com_3.csv",
   "post_merge_proba_file": "pmp.csv",
   "merge_unstable_info_file": "unstable.csv",
-  "entropy_piecewise_components": 3,
+  "entropy_piecewise_components": 2,
   "outliers": []
 }

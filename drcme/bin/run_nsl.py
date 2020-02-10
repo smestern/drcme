@@ -2,12 +2,17 @@ import numpy as np
 import pandas as pd
 import drcme.spca_fit as sf
 import drcme.load_data as ld
+import drcme.nsl as nsl_tools
+import drcme.spca_pack_nbrs as spca_pack_nbrs
 import argschema as ags
 import joblib
 import logging
 import os
 import json
 import matplotlib.pyplot as plt
+from drcme.gam.models import gcn
+from drcme.gam.data import dataset
+from drcme.gam.trainer import trainer_classification_gcn
 from ipfx.feature_vectors import _subsample_average
 from sklearn.impute import KNNImputer
 from sklearn import preprocessing
@@ -78,7 +83,7 @@ def labelnoise(spca, labels, threshold=0.7):
                                              random_state=0)
     rf.fit(x, lb)
     prob = np.amax(rf.predict_proba(x), axis=1)   
-        # STEP 1 - Compute confident joint
+        
 
     prob_below = np.where(prob < threshold, -1, lb)
 
@@ -120,7 +125,13 @@ def normalize_ds(array1, norm_type):
     elif norm_type == 4:
         #Scale by min max within sample
         array1 = preprocessing.minmax_scale(array1, (-1,1), axis=1, copy=False)
+    elif norm_type == 5:
+        #Scale by min max within sample
+        normalize = preprocessing.Normalizer(copy=False)
 
+        baseline = np.mean(array1[:,:30], axis=1).reshape(-1,1)
+        array1 = array1 - baseline
+        array1 = preprocessing.minmax_scale(array1, (-1,1), axis=1, copy=False)
     return array1
 
 
@@ -184,11 +195,15 @@ def main(params_file, output_dir, output_code, datasets, norm_type, labels_file,
     #labels['0'] = labelnoise(df_s, labels)
     train_ind = np.where(labels['0'] > -1)[0]
     pred_ind = np.where(labels['0'] == -1)[0]
+    train_id = specimen_ids[train_ind]
+    pred_id = specimen_ids[pred_ind]
+    train_label = labels.iloc[train_ind]
     train_label = labels.iloc[train_ind]
     pred_label = labels.iloc[pred_ind]
     ### Now run through again and impute missing:
     train_data = {}
     pred_data = {}
+    
     for l in data_for_spca:
         nu_m = data_for_spca[l]
         nu_m = imp.fit_transform(nu_m)
@@ -200,36 +215,61 @@ def main(params_file, output_dir, output_code, datasets, norm_type, labels_file,
         data_for_spca[l] = nu_m
     ##Outlier Elim? 
     #specimen_ids, data_for_spca = outlierElim(specimen_ids, data_for_spca)
+    ## Form our datasets for training
     HPARAMS.input_shape =  [pad_len + 1,1, len(data_for_spca)]
-    full_data = np.dstack((data_for_spca[i] for i in sorted(data_for_spca.keys())))
-    train_data = np.dstack((train_data[i] for i in sorted(train_data.keys())))
-    pred_data = np.dstack((pred_data[i] for i in sorted(pred_data.keys())))
-    train_dataset = tf.data.Dataset.from_tensor_slices(train_data)
-    pred_dataset = tf.data.Dataset.from_tensor_slices((pred_data, pred_label.values))
-    for feat, targ in pred_dataset.take(5):
-        print(feat.numpy())
+    full_data = np.hstack((data_for_spca[i] for i in sorted(data_for_spca.keys())))
+    train_data = np.hstack((train_data[i] for i in sorted(train_data.keys())))
+    pred_data = np.hstack((pred_data[i] for i in sorted(pred_data.keys())))    
+    
 
     first_key = list(data_for_spca.keys())[0]
     if len(specimen_ids) != data_for_spca[first_key].shape[0]:
         logging.error("Mismatch of specimen id dimension ({:d}) and data dimension ({:d})".format(len(specimen_ids), data_for_spca[first_key].shape[0]))
-
-    
-    x_train, y_train = train_dataset, train_label.values
    
+       
+    ## Write the Data to a record for use with 'graph params'
+    writer = tf.io.TFRecordWriter(output_dir + 'train_data.tfr')
+    for id, data, label in zip(train_id, train_data, train_label.values):
+        example = nsl_tools.create_example(data,label,id)
+        writer.write(example.SerializeToString())
+    writer = tf.io.TFRecordWriter(output_dir + 'pred_data.tfr')
+    for id, data, label in zip(specimen_ids, full_data, labels.values):
+        example = nsl_tools.create_example(data,label,id)
+        writer.write(example.SerializeToString())
+    
+    
+    
+    
 
     logging.info("Proceeding with %d cells", len(specimen_ids))
     
     base_model = tf.keras.Sequential([
-    tf.keras.Input((train_data.shape[1], train_data.shape[2]), name='feature'),
+    tf.keras.Input(train_data.shape[1], name='feature'),
     tf.keras.layers.Flatten(),
     tf.keras.layers.Dense(128, activation=tf.nn.relu),
     tf.keras.layers.Dense(10, activation=tf.nn.softmax)
         ])
-    base_model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-    #base_model.fit({'feature': x_train, 'label': np.ravel(y_train)}, batch_size=32, epochs=5)
-    #results = base_model.evaluate({'feature': x_train, 'label': y_train}, batch_size=32, epochs=5)
-    #named_results = dict(zip(base_model.metrics_names, results))
-   # print('\naccuracy:', named_results['accuracy'])
+
+ 
+    #Split into validation / test / train datasets
+    train_dataset = tf.data.Dataset.from_tensor_slices(
+      {'feature': train_data, 'label': np.ravel(train_label.values)}).shuffle(200)
+    test_fraction = 0.3
+    test_size = int(test_fraction *
+                      int(train_data.shape[0]))
+    
+    test_dataset = train_dataset.take(test_size).batch(10)
+    train_dataset = train_dataset.skip(test_size)
+    validation_fraction = 0.2
+    validation_size = int(validation_fraction *
+                      int(train_data.shape[0]))
+    print('taking val: ' + str(validation_size) + ' test: ' + str(int(( 1 - validation_fraction) *
+                      int(train_data.shape[0]))))
+    validation_dataset = train_dataset.take(validation_size).batch(10)
+    train_dataset = train_dataset.skip(validation_size).batch(10)
+
+
+
 
     # Wrap the model with adversarial regularization. 
     adv_config = nsl.configs.make_adv_reg_config(multiplier=0.2, adv_step_size=0.05) 
@@ -238,16 +278,34 @@ def main(params_file, output_dir, output_code, datasets, norm_type, labels_file,
     # Compile, train, and evaluate. 
     full_labels = np.where(labels.values != -1, labels.values, (np.unique(labels.values)[-1] + 1))
     adv_model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy']) 
-    history = adv_model.fit({'feature': train_data, 'label': np.ravel(train_label.values)}, batch_size=32, epochs=20) 
-    adv_model.evaluate({'feature': train_data, 'label': np.ravel(train_label.values)})
+    history = adv_model.fit(train_dataset, validation_data=validation_dataset, epochs=5) 
+    print('### FIT COMPLETE ### TESTING')
+    adv_model.evaluate(test_dataset)
     pred_labels_prob = adv_model.predict({'feature': full_data, 'label':full_labels })
+
+
     pred_labels = np.argmax(pred_labels_prob, axis=1)
     logging.info("Saving results...")
     labels['0'] = pred_labels
     
     
-    labels.to_csv(output_code + 'NSL_pred.csv')
+    labels.to_csv(output_code + '_NSL_pred_adv_learn.csv')
+
+
+    ####GRAPH NETWORK
+    ##nsl_tools.save_for_gam(full_data, full_labels)
+
+    nsl_tools.build_graph(df_s, output_dir + 'embed.tsv')
+    spca_pack_nbrs.pack_nbrs(
+       output_dir + '/train_data.tfr',
+        output_dir + '/pred_data.tfr',
+        output_dir + 'embed.tsv',
+        output_dir + '/nsl_train_data.tfr',
+    add_undirected_edges=True,
+    max_nbrs=6)
+    predictions = nsl_tools.graph_nsl(output_dir + '/nsl_train_data.tfr', output_dir + '/pred_data.tfr', full_data)
     logging.info("Done.")
+
 
 
 class HParams(object):

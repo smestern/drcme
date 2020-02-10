@@ -2,7 +2,7 @@
   "output_dir": "C:\\Users\\SMest\\source\\repos\\",
   "output_code": "NHP_extra_cell_comb",
   "params_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\default_spca_params_extracel2.json",
-  "labels_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\gt_labels_np.csv",
+  "labels_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\gtlabels_1.csv",
   "spca_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\sparse_pca_components_NHP_extra_cell_comb.csv",
   "norm_type": "2",
   "datasets": [

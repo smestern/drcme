@@ -89,6 +89,7 @@ def normalize_ds(array1, norm_type):
         #Scale to mean waveform
         scaler = preprocessing.StandardScaler(copy=False)
         scaler.fit_transform(array1)
+        
         #array1 = preprocessing.scale(array1, axis=1)
     elif norm_type == 2:
         #Scale by z score to pop mean

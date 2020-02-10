@@ -30,6 +30,7 @@
     <Compile Include="drcme\bin\run_cluster_metrics.py" />
     <Compile Include="drcme\bin\run_existing_spca_on_new_data_h5.py" />
     <Compile Include="drcme\bin\run_label_prop_on_spca.py" />
+    <Compile Include="drcme\bin\run_single_UMAP.py" />
     <Compile Include="drcme\bin\run_single_TSNE.py" />
     <Compile Include="drcme\bin\run_combined_tsne.py" />
     <Compile Include="drcme\bin\run_ephys_morph_clustering.py" />
@@ -50,11 +51,14 @@
     <Compile Include="drcme\ephys_morph_clustering.py" />
     <Compile Include="drcme\load_data.py" />
     <Compile Include="drcme\post_gmm_merging.py" />
+    <Compile Include="drcme\nsl.py" />
     <Compile Include="drcme\prediction.py" />
     <Compile Include="drcme\spca_fit.py" />
+    <Compile Include="drcme\spca_pack_nbrs.py" />
     <Compile Include="drcme\spca_transform.py" />
     <Compile Include="drcme\spca_zht.py" />
     <Compile Include="drcme\tests\test_spca_zht.py" />
+    <Compile Include="drcme\umap.py" />
     <Compile Include="drcme\tsne.py" />
     <Compile Include="drcme\__init__.py" />
     <Compile Include="setup.py" />

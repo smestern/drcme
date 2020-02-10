@@ -1,0 +1,15 @@
+{
+  "output_dir": "C:\\Users\\SMest\\source\\repos\\",
+  "output_code": "PVN_noNorm",
+  "params_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\default_spca_params_pvn.json",
+  "labels_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\GT_PVN.csv",
+  "spca_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\sparse_pca_components_PVN_noNorm.csv",
+  "norm_type": "0",
+  "datasets": [
+    {
+      "fv_h5_file": "C:\\Users\\SMest\\Documents\\clustering-data\\intra_cell\\output.h5",
+      "allow_missing_structure": "true",
+      "allow_missing_dendrite": "true"
+    }
+  ]
+}

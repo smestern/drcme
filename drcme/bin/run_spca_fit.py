@@ -82,7 +82,7 @@ def normalize_ds(array1, norm_type):
         #array1 = preprocessing.scale(array1, axis=1)
     elif norm_type == 2:
         array1 = preprocessing.scale(array1, axis=1)
-        scaler = preprocessing.StandardScaler(csopy=False)
+        scaler = preprocessing.StandardScaler(copy=False)
         scaler.fit_transform(array1)
     elif norm_type == 3:
         #manually Scale to mean waveform
@@ -145,8 +145,10 @@ def main(params_file, output_dir, output_code, datasets, norm_type, **kwargs):
                 do[k] = normalize_ds(do[k], norm_type)
                  
                 data_for_spca[k] = np.vstack([data_for_spca[k], do[k]])
-            np.savetxt(output_fld + k + str(i) +'.csv', do[k], delimiter=",", fmt='%12.5f')
-            np.savetxt(output_fld + k + str(i) +'mean.csv', np.vstack((np.nanmean(do[k], axis=0),np.nanstd(do[k],axis=0))),delimiter=",", fmt='%12.5f')
+                np.savetxt(output_fld + k + str(i) +'.csv', do[k], delimiter=",", fmt='%12.5f')
+                np.savetxt(output_fld + k + str(i) +'mean.csv', np.vstack((np.nanmean(do[k], axis=0),np.nanstd(data_for_spca[k],axis=0))),delimiter=",", fmt='%12.5f')
+                np.savetxt(output_fld + k + str(i) +'prev.csv', data_for_spca[k], delimiter=",", fmt='%12.5f')
+                np.savetxt(output_fld + k + str(i) +'prev_mean.csv', np.vstack((np.nanmean(data_for_spca[k], axis=0),np.nanstd(data_for_spca[k],axis=0))),delimiter=",", fmt='%12.5f')
     specimen_ids = np.hstack(specimen_ids_list)
     ### Now run through again and impute missing:
     for l in data_for_spca:

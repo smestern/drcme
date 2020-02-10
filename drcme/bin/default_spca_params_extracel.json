@@ -1,44 +1,8 @@
 {
-  "first_ap_v": {
+  "first_ap_v_200": {
     "n_components": 7,
     "nonzero_component_list": [ 400, 350, 400, 350, 350, 375, 350 ],
     "use_corr": false,
-    "range": [ 0,140 ]
-  },
-  "first_ap_dv": {
-    "n_components": 5,
-    "nonzero_component_list": [ 225, 175, 225, 250, 150],
-    "use_corr": false,
     "range": null
-  },
-  "dv_peak": {
-    "n_components": 1,
-    "nonzero_component_list": [ 90, 70, 80 ],
-    "use_corr": false,
-    "range": [ 0, 1, 2 ]
-  },
-  "half_width": {
-    "n_components": 1,
-    "nonzero_component_list": [ 600, 550, 300 ],
-    "use_corr": false,
-    "range": [ 0, 1, 2 ]
-  },
-  "spike_width": {
-    "n_components": 1,
-    "nonzero_component_list": [ 60, 55, 30 ],
-    "use_corr": false,
-    "range": [ 0, 1, 2 ]
-  },
-  "spike_width_ratio": {
-    "n_components": 1,
-    "nonzero_component_list": [ 60, 55, 30 ],
-    "use_corr": false,
-    "range": [ 0, 1, 2 ]
-  },
-  "threshold_peak": {
-    "n_components": 1,
-    "nonzero_component_list": [ 60, 55, 30 ],
-    "use_corr": false,
-    "range": [ 0, 1, 2 ]
   }
 }

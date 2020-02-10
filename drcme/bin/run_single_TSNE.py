@@ -2,7 +2,7 @@ import pandas as pd
 import argschema as ags
 import drcme.tsne as tsne
 import matplotlib.pyplot as plt
-
+import numpy as np
 
 class ComboTsneParameters(ags.ArgSchema):
     spca_file_1 = ags.fields.InputFile()
@@ -18,11 +18,23 @@ def main(spca_file_1, output_file,
     row = int((len(df_1.index) / 2))
     df_2 = df_1.iloc[row:]
     df_1 = df_1.iloc[:row]
+    full_df = pd.DataFrame()
     #learning_rate=10, early_exaggeration=500
-    combo_df = tsne.combined_tsne(df_1, df_2, n_components, perplexity, n_iter)
-    combo_df.plot.scatter(x='x', y='y')
+    for per in np.arange(5, perplexity):
+        combo_df = tsne.combined_tsne(df_1, df_2, n_components, per, n_iter)
+        #combo_df.to_csv(output_file)
+        combo_df.plot.scatter(x='x', y='y')
+        plt.title(str(per))
+        
+        full_df['x' + str(per)] = combo_df['x'].values
+        full_df['y' + str(per)] = combo_df['y'].values
+    print('finished')
+    
+    full_df.to_csv(output_file)
     plt.show()
-    combo_df.to_csv(output_file)
+
+
+    
 
 
 if __name__ == "__main__":

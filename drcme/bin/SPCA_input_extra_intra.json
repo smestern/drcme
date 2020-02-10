@@ -1,29 +1,29 @@
 {
   "output_dir": "C:\\Users\\SMest\\source\\repos\\",
   "output_code": "NHP_extra_intra_cell",
-  "params_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\default_spca_params_extracel_intra.json",
-  "labels_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\etypes_aspiny_extracel.csv",
-  "spca_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\sparse_pca_components_NHP_extra_cell.csv",
-  "norm_type": "4",
+  "params_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\default_spca_params_extracel.json",
+  "labels_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\gtlabels_1.csv",
+  "spca_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\sparse_pca_components_NHP_extra_intra_cell.csv",
+  "norm_type": "2",
+  "spca_file_1": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\sparse_pca_components_NHP_extra_intra_cell.csv",
+  "spca_file_2": "",
+  "output_file": "UMAP_all.csv",
+  "n_components": "2",
+  "perplexity": "20",
+  "n_iter": "60000",
   "datasets": [
+    {
+      "fv_h5_file": "C:\\Users\\SMest\\Documents\\clustering-data\\NP NEW\\output.h5",
+      "allow_missing_structure": "true",
+      "allow_missing_dendrite": "true"
+    },
     {
       "fv_h5_file": "C:\\Users\\SMest\\Documents\\clustering-data\\NHP EXTRA\\output.h5",
       "allow_missing_structure": "true",
       "allow_missing_dendrite": "true"
-
     },
     {
-      "fv_h5_file": "C:\\Users\\SMest\\fv_mouse_gen2.h5",
-      "metadata_file": "C:\\Users\\SMest\\Documents\\clustering-data\\cell_types_specimen_details_NEW CLUSTERS 12_16.csv",
-      "dendrite_type": "all"
-    },
-    {
-      "fv_h5_file": "C:\\Users\\SMest\\fv_human.h5",
-      "metadata_file": "C:\\Users\\SMest\\Documents\\clustering-data\\cell_types_specimen_details_NEW CLUSTERS 12_16.csv",
-      "dendrite_type": "all"
-    },
-    {
-      "fv_h5_file": "C:\\Users\\SMest\\Documents\\fv_test_6s.h5",
+      "fv_h5_file": "C:\\Users\\SMest\\Documents\\clustering-data\\INTRA EXTRA\\output.h5",
       "allow_missing_structure": "true",
       "allow_missing_dendrite": "true"
     }
