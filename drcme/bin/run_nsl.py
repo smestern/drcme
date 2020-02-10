@@ -304,6 +304,13 @@ def main(params_file, output_dir, output_code, datasets, norm_type, labels_file,
     add_undirected_edges=True,
     max_nbrs=6)
     predictions = nsl_tools.graph_nsl(output_dir + '/nsl_train_data.tfr', output_dir + '/pred_data.tfr', full_data)
+    pred_labels = np.argmax(predictions, axis=1)
+    logging.info("Saving results...")
+    labels['0'] = pred_labels
+    
+    
+    
+    labels.to_csv(output_code + '_NSL_pred_graph_learn.csv')
     logging.info("Done.")
 
 

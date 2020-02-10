@@ -37,8 +37,8 @@ class HParams(object):
     self.num_lstm_dims = 64
     self.dropout_rate = 0.2
     ### training parameters
-    self.train_epochs = 10
-    self.batch_size = 8
+    self.train_epochs = 15
+    self.batch_size = 10
 
     ### eval parameters
     self.eval_steps = None  # All instances in the test set are evaluated.
@@ -227,18 +227,25 @@ def build_base_model():
 
 
 def graph_nsl(train_path, full_path, training_samples_count=10):
-    
+    print("### RUNNING GRAPH NETWORK ####")
     HPARAMS.max_seq_length = training_samples_count.shape[1]
     HPARAMS.vocab_size = 10
-    train_dataset = make_dataset(train_path)
-    test_dataset = make_dataset(full_path)
+    train_dataset = make_dataset(train_path, True)
+    pred_dataset = make_dataset(full_path)
     
-    validation_fraction = 0.5
+    test_fraction = 0.3
+    test_size = int(test_fraction *
+                      int(training_samples_count.shape[0]))
+    
+    test_dataset = train_dataset.take(test_size)
+    train_dataset = train_dataset.skip(test_size)
+    validation_fraction = 0.2
     validation_size = int(validation_fraction *
-                      int(training_samples_count.shape[0] / HPARAMS.batch_size))
-    print(validation_size)
-    #validation_dataset = train_dataset.take(validation_size)
-    #train_dataset = train_dataset.skip(validation_size)
+                      int(training_samples_count.shape[0]))
+    print('taking val: ' + str(validation_size) + ' test: ' + str(int(( 1 - validation_fraction) *
+                      int(training_samples_count.shape[0]))))
+    validation_dataset = train_dataset.take(validation_size)
+    train_dataset = train_dataset.skip(validation_size)
     
    
     base_reg_model = build_base_model()
@@ -255,11 +262,14 @@ def graph_nsl(train_path, full_path, training_samples_count=10):
     print(base_reg_model.summary())
     
     graph_reg_history = graph_reg_model.fit(
-    train_dataset,
+    train_dataset, validation_data=validation_dataset,
     epochs=HPARAMS.train_epochs,
+    steps_per_epoch=160,
+    validation_steps=110,
     verbose=1)
+    graph_reg_model.evaluate(test_dataset)
 
-    predict = graph_reg_model.predict(test_dataset)
+    predict = graph_reg_model.predict(pred_dataset)
 
     return predict
 
@@ -330,11 +340,9 @@ def make_dataset(file_path, training=False):
   dataset = tf.data.TFRecordDataset(file_path)
   if training:
     dataset = dataset.shuffle(10000)
-  for p in dataset.take(5):
-      data, label = _parse_example(p)
   dataset = dataset.map(_parse_example)
   
-  dataset = dataset.batch(HPARAMS.batch_size)
+  dataset = dataset.repeat().batch(HPARAMS.batch_size)
   return dataset
 
 HPARAMS = HParams()
