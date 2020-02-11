@@ -12,7 +12,7 @@
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <LaunchProvider>Web launcher</LaunchProvider>
     <InterpreterId>Global|PythonCore|3.7</InterpreterId>
-    <CommandLineArguments>--input_json "C:\Users\SMest\source\repos\drcme\drcme\bin\SPCA_input.json"</CommandLineArguments>
+    <CommandLineArguments>--input_json "C:\Users\SMest\source\repos\drcme\drcme\bin\SPCA_input_extra_intra.json"</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
     <IsWindowsApplication>False</IsWindowsApplication>
@@ -58,6 +58,7 @@
     <Compile Include="drcme\spca_transform.py" />
     <Compile Include="drcme\spca_zht.py" />
     <Compile Include="drcme\tests\test_spca_zht.py" />
+    <Compile Include="drcme\norm.py" />
     <Compile Include="drcme\umap.py" />
     <Compile Include="drcme\tsne.py" />
     <Compile Include="drcme\__init__.py" />

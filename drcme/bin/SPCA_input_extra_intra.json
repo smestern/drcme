@@ -4,7 +4,7 @@
   "params_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\default_spca_params_extracel.json",
   "labels_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\gtlabels_1.csv",
   "spca_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\sparse_pca_components_NHP_extra_intra_cell.csv",
-  "norm_type": "2",
+  "norm_type": "6",
   "spca_file_1": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\sparse_pca_components_NHP_extra_intra_cell.csv",
   "spca_file_2": "",
   "output_file": "UMAP_all.csv",
@@ -18,14 +18,15 @@
       "allow_missing_dendrite": "true"
     },
     {
-      "fv_h5_file": "C:\\Users\\SMest\\Documents\\clustering-data\\NHP EXTRA\\output.h5",
+      "fv_h5_file": "C:\\Users\\SMest\\Documents\\clustering-data\\INTRA EXTRA\\output.h5",
       "allow_missing_structure": "true",
       "allow_missing_dendrite": "true"
     },
     {
-      "fv_h5_file": "C:\\Users\\SMest\\Documents\\clustering-data\\INTRA EXTRA\\output.h5",
+      "fv_h5_file": "C:\\Users\\SMest\\Documents\\clustering-data\\NHP EXTRA\\output.h5",
       "allow_missing_structure": "true",
       "allow_missing_dendrite": "true"
     }
+    
   ]
 }

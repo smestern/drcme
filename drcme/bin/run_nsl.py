@@ -4,15 +4,13 @@ import drcme.spca_fit as sf
 import drcme.load_data as ld
 import drcme.nsl as nsl_tools
 import drcme.spca_pack_nbrs as spca_pack_nbrs
+import drcme.norm as norm
 import argschema as ags
 import joblib
 import logging
 import os
 import json
 import matplotlib.pyplot as plt
-from drcme.gam.models import gcn
-from drcme.gam.data import dataset
-from drcme.gam.trainer import trainer_classification_gcn
 from ipfx.feature_vectors import _subsample_average
 from sklearn.impute import KNNImputer
 from sklearn import preprocessing
@@ -23,7 +21,7 @@ from sklearn.linear_model import LogisticRegression
 import math
 import neural_structured_learning as nsl
 import tensorflow as tf
-import cleanlab
+import drcme.norm as norm
 
 output_fld = "output\\debug\\"
 class DatasetParameters(ags.schemas.DefaultSchema):
@@ -105,34 +103,6 @@ def equal_ar_size(array1, array2, label, i):
     return array1, array2 
     
 
-def normalize_ds(array1, norm_type):
-    if norm_type == 1:
-        #Scale to mean waveform
-        scaler = preprocessing.StandardScaler(copy=False)
-        scaler.fit_transform(array1)
-        #array1 = preprocessing.scale(array1, axis=1)
-    elif norm_type == 2:
-        array1 = preprocessing.scale(array1, axis=1)
-        scaler = preprocessing.StandardScaler(copy=False)
-        scaler.fit_transform(array1)
-    elif norm_type == 3:
-        #manually Scale to mean waveform
-        normalize = preprocessing.Normalizer(copy=False)
-        scaler = preprocessing.StandardScaler(copy=False)
-        np.nan_to_num(array1, copy=False)
-        normalize.fit_transform(array1)
-        #scaler.fit_transform(array1)
-    elif norm_type == 4:
-        #Scale by min max within sample
-        array1 = preprocessing.minmax_scale(array1, (-1,1), axis=1, copy=False)
-    elif norm_type == 5:
-        #Scale by min max within sample
-        normalize = preprocessing.Normalizer(copy=False)
-
-        baseline = np.mean(array1[:,:30], axis=1).reshape(-1,1)
-        array1 = array1 - baseline
-        array1 = preprocessing.minmax_scale(array1, (-1,1), axis=1, copy=False)
-    return array1
 
 
 
@@ -177,12 +147,12 @@ def main(params_file, output_dir, output_code, datasets, norm_type, labels_file,
     for i, do in enumerate(data_objects):
         for k in do:
             if k not in data_for_spca:
-                do[k] = normalize_ds(do[k], norm_type)
+                do[k] = norm.normalize_ds(do[k], norm_type)
                 data_for_spca[k] = do[k]
             else:
                 data_for_spca[k], do[k] = equal_ar_size(data_for_spca[k], do[k], k, i)
                 
-                do[k] = normalize_ds(do[k], norm_type)
+                do[k] = norm.normalize_ds(do[k], norm_type)
                  
                 data_for_spca[k] = np.vstack([data_for_spca[k], do[k]])
             np.savetxt(output_fld + k + str(i) +'.csv', do[k], delimiter=",", fmt='%12.5f')
@@ -253,7 +223,7 @@ def main(params_file, output_dir, output_code, datasets, norm_type, labels_file,
  
     #Split into validation / test / train datasets
     train_dataset = tf.data.Dataset.from_tensor_slices(
-      {'feature': train_data, 'label': np.ravel(train_label.values)}).shuffle(200)
+      {'waves': train_data, 'label': np.ravel(train_label.values)}).shuffle(200)
     test_fraction = 0.3
     test_size = int(test_fraction *
                       int(train_data.shape[0]))
@@ -268,8 +238,8 @@ def main(params_file, output_dir, output_code, datasets, norm_type, labels_file,
     validation_dataset = train_dataset.take(validation_size).batch(10)
     train_dataset = train_dataset.skip(validation_size).batch(10)
 
-
-
+    nsl_tools.HPARAMS.max_seq_length = train_data.shape[1]
+    base_model = nsl_tools.build_base_model()
 
     # Wrap the model with adversarial regularization. 
     adv_config = nsl.configs.make_adv_reg_config(multiplier=0.2, adv_step_size=0.05) 
@@ -278,10 +248,10 @@ def main(params_file, output_dir, output_code, datasets, norm_type, labels_file,
     # Compile, train, and evaluate. 
     full_labels = np.where(labels.values != -1, labels.values, (np.unique(labels.values)[-1] + 1))
     adv_model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy']) 
-    history = adv_model.fit(train_dataset, validation_data=validation_dataset, epochs=5) 
+    history = adv_model.fit(train_dataset, validation_data=validation_dataset, epochs=15) 
     print('### FIT COMPLETE ### TESTING')
     adv_model.evaluate(test_dataset)
-    pred_labels_prob = adv_model.predict({'feature': full_data, 'label':full_labels })
+    pred_labels_prob = adv_model.predict({'waves': full_data, 'label':full_labels })
 
 
     pred_labels = np.argmax(pred_labels_prob, axis=1)
@@ -301,9 +271,9 @@ def main(params_file, output_dir, output_code, datasets, norm_type, labels_file,
         output_dir + '/pred_data.tfr',
         output_dir + 'embed.tsv',
         output_dir + '/nsl_train_data.tfr',
-    add_undirected_edges=True,
+    add_undirected_edges=False,
     max_nbrs=6)
-    predictions = nsl_tools.graph_nsl(output_dir + '/nsl_train_data.tfr', output_dir + '/pred_data.tfr', full_data)
+    predictions = nsl_tools.graph_nsl(output_dir + '/nsl_train_data.tfr', output_dir + '/pred_data.tfr', train_data)
     pred_labels = np.argmax(predictions, axis=1)
     logging.info("Saving results...")
     labels['0'] = pred_labels

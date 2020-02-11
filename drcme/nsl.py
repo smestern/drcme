@@ -8,7 +8,7 @@ import pickle
 import time
 import scipy
 import neural_structured_learning as nsl
-from drcme.gam.models import gcn
+
 from absl import app
 from absl import flags
 from absl import logging
@@ -235,13 +235,13 @@ def graph_nsl(train_path, full_path, training_samples_count=10):
     
     test_fraction = 0.3
     test_size = int(test_fraction *
-                      int(training_samples_count.shape[0]))
+                      int(training_samples_count.shape[0] // HPARAMS.batch_size))
     
     test_dataset = train_dataset.take(test_size)
     train_dataset = train_dataset.skip(test_size)
     validation_fraction = 0.2
     validation_size = int(validation_fraction *
-                      int(training_samples_count.shape[0]))
+                      int(training_samples_count.shape[0] // HPARAMS.batch_size))
     print('taking val: ' + str(validation_size) + ' test: ' + str(int(( 1 - validation_fraction) *
                       int(training_samples_count.shape[0]))))
     validation_dataset = train_dataset.take(validation_size)
@@ -263,10 +263,7 @@ def graph_nsl(train_path, full_path, training_samples_count=10):
     
     graph_reg_history = graph_reg_model.fit(
     train_dataset, validation_data=validation_dataset,
-    epochs=HPARAMS.train_epochs,
-    steps_per_epoch=160,
-    validation_steps=110,
-    verbose=1)
+    epochs=HPARAMS.train_epochs)
     graph_reg_model.evaluate(test_dataset)
 
     predict = graph_reg_model.predict(pred_dataset)
@@ -342,7 +339,7 @@ def make_dataset(file_path, training=False):
     dataset = dataset.shuffle(10000)
   dataset = dataset.map(_parse_example)
   
-  dataset = dataset.repeat().batch(HPARAMS.batch_size)
+  dataset = dataset.batch(HPARAMS.batch_size)
   return dataset
 
 HPARAMS = HParams()

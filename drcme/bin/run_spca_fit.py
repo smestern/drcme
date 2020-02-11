@@ -13,6 +13,7 @@ from sklearn import preprocessing
 from scipy import signal
 from sklearn.ensemble import IsolationForest
 import math
+import drcme.norm as norm
 output_fld = "output\\debug\\"
 class DatasetParameters(ags.schemas.DefaultSchema):
     fv_h5_file = ags.fields.InputFile(description="HDF5 file with feature vectors")
@@ -74,28 +75,7 @@ def equal_ar_size(array1, array2, label, i):
     return array1, array2 
     
 
-def normalize_ds(array1, norm_type):
-    if norm_type == 1:
-        #Scale to mean waveform
-        scaler = preprocessing.StandardScaler(copy=False)
-        scaler.fit_transform(array1)
-        #array1 = preprocessing.scale(array1, axis=1)
-    elif norm_type == 2:
-        array1 = preprocessing.scale(array1, axis=1)
-        scaler = preprocessing.StandardScaler(copy=False)
-        scaler.fit_transform(array1)
-    elif norm_type == 3:
-        #manually Scale to mean waveform
-        normalize = preprocessing.Normalizer(copy=False)
-        scaler = preprocessing.StandardScaler(copy=False)
-        np.nan_to_num(array1, copy=False)
-        normalize.fit_transform(array1)
-        #scaler.fit_transform(array1)
-    elif norm_type == 4:
-        #Scale by min max within sample
-        array1 = preprocessing.minmax_scale(array1, (-1,1), axis=1, copy=False)
 
-    return array1
 
 
 
@@ -137,12 +117,12 @@ def main(params_file, output_dir, output_code, datasets, norm_type, **kwargs):
     for i, do in enumerate(data_objects):
         for k in do:
             if k not in data_for_spca:
-                do[k] = normalize_ds(do[k], norm_type)
+                do[k] = norm.normalize_ds(do[k], norm_type)
                 data_for_spca[k] = do[k]
             else:
                 data_for_spca[k], do[k] = equal_ar_size(data_for_spca[k], do[k], k, i)
                 
-                do[k] = normalize_ds(do[k], norm_type)
+                do[k] = norm.normalize_ds(do[k], norm_type)
                  
                 data_for_spca[k] = np.vstack([data_for_spca[k], do[k]])
                 np.savetxt(output_fld + k + str(i) +'.csv', do[k], delimiter=",", fmt='%12.5f')

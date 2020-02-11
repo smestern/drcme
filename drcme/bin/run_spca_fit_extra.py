@@ -8,6 +8,7 @@ import logging
 import os
 import json
 import matplotlib.pyplot as plt
+from matplotlib import cm
 import drcme.umap as umap
 from ipfx.feature_vectors import _subsample_average
 from sklearn.impute import KNNImputer
@@ -15,6 +16,7 @@ from sklearn import preprocessing
 from scipy import signal
 from sklearn.ensemble import IsolationForest
 import math
+import drcme.norm as norm
 output_fld = "output\\debug\\"
 class DatasetParameters(ags.schemas.DefaultSchema):
     fv_h5_file = ags.fields.InputFile(description="HDF5 file with feature vectors")
@@ -78,36 +80,7 @@ def equal_ar_size(array1, array2, label, i):
     return array1, array2 
     
 
-def normalize_ds(array1, norm_type):
-    if norm_type == 1:
-        #Scale to mean waveform
-        scaler = preprocessing.StandardScaler(copy=False)
-        scaler.fit_transform(array1)
-        #array1 = preprocessing.scale(array1, axis=1)
-    elif norm_type == 2:
-        
-        array1 = preprocessing.scale(array1, axis=1)
-        scaler = preprocessing.StandardScaler(copy=False)
-        scaler.fit_transform(array1)
-    elif norm_type == 3:
-        #manually Scale to mean waveform
-        normalize = preprocessing.Normalizer(copy=False)
-        scaler = preprocessing.StandardScaler(copy=False)
-        np.nan_to_num(array1, copy=False)
-        normalize.fit_transform(array1)
-        scaler.fit_transform(array1)
-    elif norm_type == 4:
-        #Scale by min max within sample
-        array1 = preprocessing.minmax_scale(array1, (-1,1), axis=1, copy=False)
-    elif norm_type == 5:
-        #Scale by min max within sample
-        normalize = preprocessing.Normalizer(copy=False)
 
-        baseline = np.mean(array1[:,:30], axis=1).reshape(-1,1)
-        array1 = array1 - baseline
-        array1 = preprocessing.minmax_scale(array1, (-1,1), axis=1, copy=False)
-        
-    return array1
 
 
 
@@ -117,8 +90,9 @@ def main(params_file, output_dir, output_code, datasets, norm_type, **kwargs):
     data_objects = []
     specimen_ids_list = []
     imp = KNNImputer(copy=False)
+    dataset_no = []
     
-    for ds in datasets:
+    for i, ds in enumerate(datasets):
         if len(ds["limit_to_cortical_layers"]) == 0:
             limit_to_cortical_layers = None
         else:
@@ -143,22 +117,23 @@ def main(params_file, output_dir, output_code, datasets, norm_type, **kwargs):
                 print(l)
                 print(p)
                 data_for_spca[l] = nu_m
-                
+        
         data_objects.append(data_for_spca)
         specimen_ids_list.append(specimen_ids)
+        dataset_no = np.hstack((dataset_no, np.full(specimen_ids.shape[0], i)))
 
     data_for_spca = {}
     for i, do in enumerate(data_objects):
         for k in do:
             if k not in data_for_spca:
                 
-                do[k] = normalize_ds(do[k], norm_type)
+                do[k] = norm.normalize_ds(do[k], norm_type)
                 data_for_spca[k] = do[k]
             else:
                 data_for_spca[k], do[k] = equal_ar_size(data_for_spca[k], do[k], k, i)
+                #data_for_spca[k] = norm.normalize_ds(data_for_spca[k], norm_type)
                 
-                do[k] = normalize_ds(do[k], norm_type)
-                 
+                do[k] = norm.normalize_ds(do[k], norm_type)
                 data_for_spca[k] = np.vstack([data_for_spca[k], do[k]])
             np.savetxt(output_fld + k + str(i) +'.csv', do[k], delimiter=",", fmt='%12.5f')
             np.savetxt(output_fld + k + str(i) +'mean.csv', np.vstack((np.nanmean(do[k], axis=0),np.nanstd(do[k],axis=0))),delimiter=",", fmt='%12.5f')
@@ -167,6 +142,7 @@ def main(params_file, output_dir, output_code, datasets, norm_type, **kwargs):
     for l in data_for_spca:
         nu_m = data_for_spca[l]
         nu_m = imp.fit_transform(nu_m)
+        nu_m = norm.normalize_ds(nu_m, 1)
         data_for_spca[l] = nu_m
     ##Outlier Elim? 
     #specimen_ids, data_for_spca = outlierElim(specimen_ids, data_for_spca)
@@ -201,9 +177,11 @@ def main(params_file, output_dir, output_code, datasets, norm_type, **kwargs):
     df_2 = combo_df.iloc[row:]
     df_1 = combo_df.iloc[:row]
     _df = umap.combined_umap(df_1, df_2)
-    _df.plot.scatter(x='x', y='y')
+
+    cmap = cm.get_cmap('tab10')
+    _df.plot.scatter(x='x', y='y', c=dataset_no, cmap=cmap)
     plt.show()
-    _df.to_csv(output_dir + 'umap_'+ output_code)
+    _df.to_csv(output_dir + 'umap_'+ output_code + '.csv')
     with open(os.path.join(output_dir, "spca_components_used_{:s}.json".format(output_code)), "w") as f:
         json.dump(component_record, f, indent=4)
     logging.info("Done.")
