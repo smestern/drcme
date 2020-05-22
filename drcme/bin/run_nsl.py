@@ -6,6 +6,7 @@ import drcme.nsl as nsl_tools
 import drcme.spca_pack_nbrs as spca_pack_nbrs
 import drcme.norm as norm
 import argschema as ags
+import datetime
 import joblib
 import logging
 import os
@@ -22,6 +23,7 @@ import math
 import neural_structured_learning as nsl
 import tensorflow as tf
 import drcme.norm as norm
+from joblib import dump, load
 
 output_fld = "output\\debug\\"
 class DatasetParameters(ags.schemas.DefaultSchema):
@@ -107,7 +109,7 @@ def equal_ar_size(array1, array2, label, i):
 
 
 def main(params_file, output_dir, output_code, datasets, norm_type, labels_file, spca_file, **kwargs):
-
+    
     # Load data from each dataset
     data_objects = []
     specimen_ids_list = []
@@ -213,30 +215,35 @@ def main(params_file, output_dir, output_code, datasets, norm_type, labels_file,
 
     logging.info("Proceeding with %d cells", len(specimen_ids))
     
-    base_model = tf.keras.Sequential([
-    tf.keras.Input(train_data.shape[1], name='feature'),
-    tf.keras.layers.Flatten(),
-    tf.keras.layers.Dense(128, activation=tf.nn.relu),
-    tf.keras.layers.Dense(10, activation=tf.nn.softmax)
-        ])
-
- 
+    
+    # Define the Keras TensorBoard callback.
+    logdir = os.path.join(
+    "logs",
+    "fit",
+    datetime.datetime.now().strftime("%Y%m%d-%H%M%S"),
+)
+    full_labels = np.where(labels.values != -1, labels.values, (np.unique(labels.values)[-1] + 1))
+    
     #Split into validation / test / train datasets
     train_dataset = tf.data.Dataset.from_tensor_slices(
-      {'waves': train_data, 'label': np.ravel(train_label.values)}).shuffle(200)
+        {'waves': train_data, 'label': np.ravel(train_label.values)}).shuffle(2000).batch(HPARAMS.batch_size)
+    train_size = train_data.shape[0] // HPARAMS.batch_size
     test_fraction = 0.3
     test_size = int(test_fraction *
-                      int(train_data.shape[0]))
+                        train_size )
     
-    test_dataset = train_dataset.take(test_size).batch(10)
+    test_dataset = train_dataset.take(test_size)
     train_dataset = train_dataset.skip(test_size)
-    validation_fraction = 0.2
+    train_size = train_size - test_size
+    validation_fraction = 0.6
     validation_size = int(validation_fraction *
-                      int(train_data.shape[0]))
-    print('taking val: ' + str(validation_size) + ' test: ' + str(int(( 1 - validation_fraction) *
-                      int(train_data.shape[0]))))
-    validation_dataset = train_dataset.take(validation_size).batch(10)
-    train_dataset = train_dataset.skip(validation_size).batch(10)
+                        train_size)
+    train_size = train_size - validation_size
+    print('taking val: ' + str(validation_size) + ' test: ' + str(test_size) + ' train: ' + str(train_size))
+    validation_dataset = train_dataset.take(validation_size)
+    train_dataset = train_dataset.skip(validation_size)
+    
+
 
     nsl_tools.HPARAMS.max_seq_length = train_data.shape[1]
     base_model = nsl_tools.build_base_model()
@@ -246,14 +253,17 @@ def main(params_file, output_dir, output_code, datasets, norm_type, labels_file,
     adv_model = nsl.keras.AdversarialRegularization(base_model,
         adv_config=adv_config)
     # Compile, train, and evaluate. 
-    full_labels = np.where(labels.values != -1, labels.values, (np.unique(labels.values)[-1] + 1))
-    adv_model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy']) 
+    
+    adv_model.compile(optimizer='adam', loss=tf.keras.losses.SparseCategoricalCrossentropy(), metrics=['accuracy']) 
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=logdir)
     history = adv_model.fit(train_dataset, validation_data=validation_dataset, epochs=15) 
     print('### FIT COMPLETE ### TESTING')
-    adv_model.evaluate(test_dataset)
+    acc = adv_model.evaluate(test_dataset, verbose=1)
+    
+    
+
+    np.savetxt('full_acc.csv', acc, delimiter=",", fmt='%12.5f')
     pred_labels_prob = adv_model.predict({'waves': full_data, 'label':full_labels })
-
-
     pred_labels = np.argmax(pred_labels_prob, axis=1)
     logging.info("Saving results...")
     labels['0'] = pred_labels
@@ -262,25 +272,25 @@ def main(params_file, output_dir, output_code, datasets, norm_type, labels_file,
     labels.to_csv(output_code + '_NSL_pred_adv_learn.csv')
 
 
-    ####GRAPH NETWORK
-    ##nsl_tools.save_for_gam(full_data, full_labels)
+    #####GRAPH NETWORK
+    ###nsl_tools.save_for_gam(full_data, full_labels)
 
-    nsl_tools.build_graph(df_s, output_dir + 'embed.tsv')
-    spca_pack_nbrs.pack_nbrs(
-       output_dir + '/train_data.tfr',
-        output_dir + '/pred_data.tfr',
-        output_dir + 'embed.tsv',
-        output_dir + '/nsl_train_data.tfr',
-    add_undirected_edges=False,
-    max_nbrs=6)
-    predictions = nsl_tools.graph_nsl(output_dir + '/nsl_train_data.tfr', output_dir + '/pred_data.tfr', train_data)
-    pred_labels = np.argmax(predictions, axis=1)
-    logging.info("Saving results...")
-    labels['0'] = pred_labels
+    #nsl_tools.build_graph(df_s, output_dir + 'embed.tsv')
+    #spca_pack_nbrs.pack_nbrs(
+    #   output_dir + '/train_data.tfr',
+    #    output_dir + '/pred_data.tfr',
+    #    output_dir + 'embed.tsv',
+    #    output_dir + '/nsl_train_data.tfr',
+    #add_undirected_edges=True,
+    #max_nbrs=6)
+    #predictions = nsl_tools.graph_nsl(output_dir + '/nsl_train_data.tfr', output_dir + '/pred_data.tfr', train_data)
+    #pred_labels = np.argmax(predictions, axis=1)
+    #logging.info("Saving results...")
+    #labels['0'] = pred_labels
     
     
     
-    labels.to_csv(output_code + '_NSL_pred_graph_learn.csv')
+    #labels.to_csv(output_code + '_NSL_pred_graph_learn.csv')
     logging.info("Done.")
 
 

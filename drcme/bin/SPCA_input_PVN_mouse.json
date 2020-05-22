@@ -1,0 +1,20 @@
+{
+  "output_dir": "C:\\Users\\SMest\\source\\repos\\",
+  "output_code": "PVN_mouse_only",
+  "params_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\default_spca_params_pvn.json",
+  "labels_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\GT_PVN_mouse.csv",
+  "spca_file": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\sparse_pca_components_PVN_mouse_only.csv",
+  "norm_type": "2",
+  "datasets": [
+    {
+      "fv_h5_file": "C:\\Users\\SMest\\Documents\\fv_parvo_mouse.h5",
+      "allow_missing_structure": "true",
+      "allow_missing_dendrite": "true"
+    },
+    {
+      "fv_h5_file": "C:\\Users\\SMest\\Documents\\fv_parvo_mouse_RRS.h5",
+      "allow_missing_structure": "true",
+      "allow_missing_dendrite": "true"
+    }
+  ]
+}

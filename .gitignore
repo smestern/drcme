@@ -4,3 +4,9 @@
 
 .eggs/
 *.egg-info/
+/drcme/logs/fit/train
+/logs/fit/20200412-180708/train
+/train_dataset.lib
+/train_dataset.pkl
+/train_dataset_labels.lib
+/drcme/bin/logs/fit/train

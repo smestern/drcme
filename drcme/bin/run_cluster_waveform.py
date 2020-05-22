@@ -15,9 +15,14 @@ from scipy import signal
 from sklearn.ensemble import IsolationForest, RandomForestClassifier
 from sklearn import tree
 from sklearn import multiclass
-
-
-
+from sklearn.model_selection import cross_val_score, permutation_test_score
+from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import GaussianNB
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import VotingClassifier
+from sklearn.model_selection import GridSearchCV
+from sklearn.multiclass import OneVsOneClassifier
+import sklearn.metrics as metrics
 import math
 output_fld = "output\\debug\\"
 class DatasetParameters(ags.schemas.DefaultSchema):
@@ -42,7 +47,7 @@ class AnalysisParameters(ags.ArgSchema):
     datasets = ags.fields.Nested(DatasetParameters,
                                  required=True,
                                  many=True,
-                                 description="schema for loading one or more specific datasets for the analysis")
+                                 description="schema for loading one or more specific datas                            ets for the analysis")
 
 
 
@@ -163,6 +168,8 @@ def main(params_file, output_dir, output_code, datasets, norm_type, labels_file,
     if len(specimen_ids) != data_for_spca[first_key].shape[0]:
         logging.error("Mismatch of specimen id dimension ({:d}) and data dimension ({:d})".format(len(specimen_ids), data_for_spca[first_key].shape[0]))
     labels = pd.read_csv(labels_file, index_col=0)
+    print(labels)
+    print(labels.values)
     uni_labels = np.unique(labels.values)
     ids_list = labels.index.values
     
@@ -194,13 +201,62 @@ def main(params_file, output_dir, output_code, datasets, norm_type, labels_file,
         #per = multiclass.OneVsOneClassifier(RandomForestClassifier(n_estimators=500, oob_score=True,
                                         # random_state=0), n_jobs=-1).fit(train_df.values, labels.to_numpy().flatten())
         rf.fit(train_df.values, labels_2.to_numpy().flatten())
+
         logging.info("OOB score: {:f}".format(rf.oob_score_))
         pred_labels = rf.predict(test_df.values)
         feat_import = rf.feature_importances_
         print(rf.oob_score_)
         logging.debug("Saving results")
-        pd.DataFrame(pred_labels, index=test_df.index.values).to_csv('rf_predictions.csv')
+        #pd.DataFrame(pred_labels, index=test_df.index.values).to_csv('rf_predictions.csv')
         pd.DataFrame(feat_import).to_csv('rf_feat_importance.csv')
+        ### Now compute for labeled data
+        train_ind = np.where(labels['0'] > -1)[0]
+        labeled = labels.iloc[train_ind]
+        labeled_df_s = df_s.iloc[train_ind]
+        train_df, test_df, labels_2, labels_3 = train_test_split(labeled_df_s, labeled)
+
+        clf1 = LogisticRegression(random_state=1, max_iter=1000)
+        clf2 = RandomForestClassifier(n_estimators=500, random_state=1)
+        clf3 = GaussianNB()
+        eclf = VotingClassifier(
+                    estimators=[('lr', clf1), ('rf', clf2), ('gnb', clf3)],
+                            voting='soft', n_jobs=-1)
+        eclf.fit(train_df, np.ravel(labels_2.values))
+        fit_score = eclf.score(test_df, np.ravel(labels_3.values))
+        print(fit_score)
+        params = {'lr__C': np.linspace(1.0, 1000.0,10), 'rf__n_estimators': np.linspace(20, 1000,10, dtype=np.int64)}
+
+        grid = GridSearchCV(estimator=eclf, param_grid=params, cv=5, n_jobs=-1, verbose=1)
+        grid.fit(train_df, np.ravel(labels_2.values))
+        fit_score = grid.score(test_df, np.ravel(labels_3.values))
+        print("grid search params")
+        print(fit_score)
+        grid_CV = grid.best_estimator_
+        full_acc = np.arange(15, dtype=np.float64)
+        PARAMS = grid.best_estimator_
+        for i, a in enumerate(full_acc):
+            train_df, test_df, labels_2, labels_3 = train_test_split(labeled_df_s, labeled, test_size=0.6, train_size=0.28)
+            clf1 = LogisticRegression(random_state=1, max_iter=1000)
+            clf2 = RandomForestClassifier(n_estimators=500, random_state=1)
+            clf3 = GaussianNB()
+            eclf = VotingClassifier(
+                    estimators=[('lr', clf1), ('rf', clf2), ('gnb', clf3)],
+                            voting='soft', n_jobs=-1)
+            eclf.fit(train_df, np.ravel(labels_2.values))
+            full_acc[i] = eclf.score(test_df, np.ravel(labels_3.values))
+
+
+        np.savetxt('full_acc.csv', full_acc, delimiter=",", fmt='%12.5f')
+        _,_,pvalue = permutation_test_score(grid_CV,train_df, np.ravel(labels_2.values), n_jobs=-1)
+        print("pvalue: " + str(pvalue))
+        fclf = OneVsOneClassifier(grid, n_jobs=-1)
+        fclf.fit(train_df, np.ravel(labels_2.values))
+        fit_score = fclf.score(test_df, np.ravel(labels_3.values))
+        y_pred = fclf.predict(test_df)
+        print(fit_score)
+        print(metrics.classification_report(y_pred, np.ravel(labels_3.values)))
+        pred_labels = fclf.predict(df_s.values)
+        pd.DataFrame(pred_labels, index=df_s.index.values).to_csv('full_predictions.csv')
 
     
     feat_import_by_label = np.hstack((0, np.full(feat_import.shape[0], np.nan)))

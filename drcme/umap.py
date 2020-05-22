@@ -8,8 +8,7 @@ import umap
 def combined_umap(df_1, df_2, n_components=2, perplexity=25, n_iter=20000, learningr=200, earlex=90):
     all_together = np.vstack([df_1.values, df_2.values])
     all_ids = df_1.index.tolist() + df_2.index.tolist()
-    #lr = 10, earlex =700
-    reducer = umap.UMAP(n_neighbors=50, n_epochs=25, metric='manhattan')
+    reducer = umap.UMAP(n_neighbors=15, min_dist=0.1, metric='minkowski', n_epochs=(n_iter//5), verbose=True)
     umap_emb = reducer.fit_transform(all_together)
     if n_components == 3:
 

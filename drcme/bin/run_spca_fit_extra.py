@@ -71,7 +71,7 @@ def equal_ar_size(array1, array2, label, i):
     min1 = np.argmin(array1, axis=1)
     min2 = np.argmin(array2, axis=1)
     if s1 > s2:
-       array1 = signal.resample(array1, s2, axis=1)
+       array1 = signal.resample(array1, s2, axis=1) 
        
     elif s2 > s1:
        array2 = signal.resample(array2, s1, axis=1)
@@ -114,26 +114,45 @@ def main(params_file, output_dir, output_code, datasets, norm_type, **kwargs):
                 filename = ds["fv_h5_file"]
                 if 'INTRA' not in filename:
                     nu_m = nu_m[:,30:-1]
+                #else:
+                    #nu_m = nu_m * -1
                 print(l)
                 print(p)
-                data_for_spca[l] = nu_m
+                data_for_spca[l] = nu_m[:,94:]
         
         data_objects.append(data_for_spca)
         specimen_ids_list.append(specimen_ids)
         dataset_no = np.hstack((dataset_no, np.full(specimen_ids.shape[0], i)))
+    truncate = []
+    for i, do in enumerate(data_objects[0]):
+        ###FIND THE ARGMIN
+        argmin = []
+        for l in np.arange(len(data_objects)):
+            argmin = np.hstack((argmin, np.nanargmin(norm.normalize_ds(data_objects[l][do], 4))))
 
+            
+        
     data_for_spca = {}
+    data_for_spca_nonorm = {}
     for i, do in enumerate(data_objects):
         for k in do:
             if k not in data_for_spca:
-                
+                data_for_spca_nonorm[k] = do[k]
                 do[k] = norm.normalize_ds(do[k], norm_type)
                 data_for_spca[k] = do[k]
             else:
-                data_for_spca[k], do[k] = equal_ar_size(data_for_spca[k], do[k], k, i)
-                #data_for_spca[k] = norm.normalize_ds(data_for_spca[k], norm_type)
+                #data_for_spca_nonorm[k], do[k] = norm.center_on_m(data_for_spca_nonorm[k], do[k])
+                #data_for_spca[k], do[k] = norm.equal_ar_size(data_for_spca[k], do[k])
+                #data_for_spca_nonorm[k], do[k] = equal_ar_size(data_for_spca_nonorm[k], do[k], k, i)
                 
+                #data_for_spca[k] = norm.normalize_ds(data_for_spca[k], norm_type)
+                #_, do[k] = norm.shift_means(data_for_spca_nonorm[k], do[k])
+                #data_for_spca_nonorm[k] = np.vstack([data_for_spca_nonorm[k], do[k]])
                 do[k] = norm.normalize_ds(do[k], norm_type)
+                
+                
+                
+                #
                 data_for_spca[k] = np.vstack([data_for_spca[k], do[k]])
             np.savetxt(output_fld + k + str(i) +'.csv', do[k], delimiter=",", fmt='%12.5f')
             np.savetxt(output_fld + k + str(i) +'mean.csv', np.vstack((np.nanmean(do[k], axis=0),np.nanstd(do[k],axis=0))),delimiter=",", fmt='%12.5f')

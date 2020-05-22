@@ -11,7 +11,7 @@ main <- function() {
 	data_clean <- data[!(rownames(data) %in% outliers), ]
 	print(c("N samples ", nrow(data_clean)))
 
-	fit_gmm <- Mclust(data_clean, G=1:11, modelNames="VVI", verbose=TRUE)
+	fit_gmm <- Mclust(data_clean, G=1:15, modelNames="VVI", verbose=TRUE)
 	print(c("Best G ", fit_gmm$G))
 
 	write.csv(fit_gmm$z, config$tau_file)

@@ -1,5 +1,5 @@
 {
-  "spca_file_1": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\sparse_pca_components_NHP_extra_intra_cell.csv",
+  "spca_file_1": "C:\\Users\\SMest\\source\\repos\\drcme\\drcme\\bin\\sparse_pca_components_PVN_noNorm.csv",
   "spca_file_2": "",
   "output_file": "UMAP_all.csv",
   "n_components": "2",

@@ -5,14 +5,14 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{d7e074b1-fd20-4c69-9ba6-7c731bf433f7}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>drcme\bin\run_nsl.py</StartupFile>
+    <StartupFile>drcme\bin\run_cluster_waveform.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <LaunchProvider>Web launcher</LaunchProvider>
     <InterpreterId>Global|PythonCore|3.7</InterpreterId>
-    <CommandLineArguments>--input_json "C:\Users\SMest\source\repos\drcme\drcme\bin\SPCA_input_extra_intra.json"</CommandLineArguments>
+    <CommandLineArguments>--input_json "C:\Users\SMest\source\repos\drcme\drcme\bin\SPCA_input.json"</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
     <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
     <IsWindowsApplication>False</IsWindowsApplication>

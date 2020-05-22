@@ -319,5 +319,5 @@ if __name__ == '__main__':
       weight of the symmetric edge will be max(w1, w2)).""")
 
   # Ensure TF 2.0 behavior even if TF 1.X is installed.
-  tf.compat.v1.enable_v2_behavior()
+  
   app.run(_main)

@@ -8,7 +8,8 @@ import pickle
 import time
 import scipy
 import neural_structured_learning as nsl
-
+import os
+import datetime
 from absl import app
 from absl import flags
 from absl import logging
@@ -26,19 +27,19 @@ class HParams(object):
     ### neural graph learning parameters
     self.distance_type = nsl.configs.DistanceType.L2
     self.graph_regularization_multiplier = 0.1
-    self.num_neighbors = 3
+    self.num_neighbors = 6
     ### model architecture
     self.num_classes = 10
     self.conv_filters = [32, 64, 64]
     self.kernel_size = 3
     self.pool_size = 2
-    self.num_fc_units = [64]
+    self.num_fc_units = [64, 64, 128]
     self.num_embedding_dims = 16
     self.num_lstm_dims = 64
     self.dropout_rate = 0.2
     ### training parameters
     self.train_epochs = 15
-    self.batch_size = 10
+    self.batch_size = 15
 
     ### eval parameters
     self.eval_steps = None  # All instances in the test set are evaluated.
@@ -214,6 +215,7 @@ def build_base_model():
     x = tf.keras.layers.Conv1D(
         num_filters, HPARAMS.kernel_size, activation='relu')(
             x)
+    x = tf.keras.layers.Dropout(HPARAMS.dropout_rate)(x)
     if i < len(HPARAMS.conv_filters) - 1:
       # max pooling between convolutional layers
       x = tf.keras.layers.MaxPooling1D(HPARAMS.pool_size)(x)
@@ -225,30 +227,73 @@ def build_base_model():
   return model
 
 
+def make_bilstm_model():
+  """Builds a bi-directional LSTM model."""
+  inputs = tf.keras.Input(
+      shape=(HPARAMS.max_seq_length,), dtype=tf.float32, name='waves')
+  x = tf.keras.layers.Reshape((1,HPARAMS.max_seq_length), input_shape=(HPARAMS.max_seq_length,))(inputs)
+  lstm_layer = tf.keras.layers.Bidirectional(
+      tf.keras.layers.LSTM(HPARAMS.num_lstm_dims))(
+          x)
+  dense_layer = tf.keras.layers.Dense(
+      HPARAMS.num_fc_units[0], activation='relu')(
+          lstm_layer)
+  
+  outputs = tf.keras.layers.Dense(HPARAMS.num_classes, activation='softmax')(dense_layer)
+  return tf.keras.Model(inputs=inputs, outputs=outputs)
 
+def make_bilstmcnn_model():
+  """Builds a bi-directional LSTM model."""
+  inputs = tf.keras.Input(
+      shape=(HPARAMS.max_seq_length,), dtype=tf.float32, name='waves')
+  tensor_input = tf.keras.layers.Reshape((1,HPARAMS.max_seq_length), input_shape=(HPARAMS.max_seq_length,))(inputs)
+  ### Build the lstm layers
+  #dim_shuffle = tf.keras.layers.Reshape((HPARAMS.max_seq_length,1), input_shape=(1,HPARAMS.max_seq_length))
+  lstm = tf.keras.layers.Bidirectional(
+      tf.keras.layers.LSTM(HPARAMS.num_lstm_dims))(tensor_input)
+  lstm_out = tf.keras.layers.Dropout(0.1)(lstm)
+  #### Build the CNN Pathway
+  x = tf.keras.layers.Permute((2, 1))(tensor_input)
+  for i, num_filters in enumerate(HPARAMS.conv_filters):
+    x = tf.keras.layers.Conv1D(
+        num_filters, HPARAMS.kernel_size, activation='relu')(
+            x)
+    x = tf.keras.layers.Dropout(HPARAMS.dropout_rate)(x)
+    if i < len(HPARAMS.conv_filters) - 1:
+      # max pooling between convolutional layers
+      x = tf.keras.layers.MaxPooling1D(HPARAMS.pool_size)(x)
+  x = tf.keras.layers.Flatten()(x)
+  for num_units in HPARAMS.num_fc_units:
+    x = tf.keras.layers.Dense(num_units, activation='relu')(x)
+  ##Concat
+  concat = tf.keras.layers.Concatenate()([lstm_out, x]) 
+  dense = tf.keras.layers.Dense(num_units, activation='relu')(concat)
+  outputs = tf.keras.layers.Dense(HPARAMS.num_classes, activation='softmax')(dense)
+  return tf.keras.Model(inputs=inputs, outputs=outputs)
 def graph_nsl(train_path, full_path, training_samples_count=10):
     print("### RUNNING GRAPH NETWORK ####")
     HPARAMS.max_seq_length = training_samples_count.shape[1]
     HPARAMS.vocab_size = 10
     train_dataset = make_dataset(train_path, True)
     pred_dataset = make_dataset(full_path)
-    
-    test_fraction = 0.3
+    train_size = training_samples_count.shape[0] // HPARAMS.batch_size
+    test_fraction = 0.1
     test_size = int(test_fraction *
-                      int(training_samples_count.shape[0] // HPARAMS.batch_size))
+                      train_size )
     
     test_dataset = train_dataset.take(test_size)
     train_dataset = train_dataset.skip(test_size)
-    validation_fraction = 0.2
+    train_size = train_size - test_size
+    validation_fraction = 0.1
     validation_size = int(validation_fraction *
-                      int(training_samples_count.shape[0] // HPARAMS.batch_size))
-    print('taking val: ' + str(validation_size) + ' test: ' + str(int(( 1 - validation_fraction) *
-                      int(training_samples_count.shape[0]))))
+                      train_size)
+    train_size = train_size - validation_size
+    print('taking val: ' + str(validation_size) + ' test: ' + str(test_size) + ' train: ' + str(train_size))
     validation_dataset = train_dataset.take(validation_size)
     train_dataset = train_dataset.skip(validation_size)
     
    
-    base_reg_model = build_base_model()
+    base_reg_model = make_bilstmcnn_model()
     
     graph_reg_config = nsl.configs.make_graph_reg_config(
     max_neighbors=HPARAMS.num_neighbors,
@@ -258,12 +303,17 @@ def graph_nsl(train_path, full_path, training_samples_count=10):
     graph_reg_model = nsl.keras.GraphRegularization(base_reg_model,
                                                 graph_reg_config)
     graph_reg_model.compile(
-        optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-    print(base_reg_model.summary())
-    
+        optimizer='adam', loss=tf.keras.losses.SparseCategoricalCrossentropy(), metrics=['accuracy'])
+    logdir = os.path.join(
+    "logs",
+    "fit",
+    datetime.datetime.now().strftime("%Y%m%d-%H%M%S"),
+)
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=logdir, histogram_freq=1, embeddings_freq=1)
     graph_reg_history = graph_reg_model.fit(
     train_dataset, validation_data=validation_dataset,
-    epochs=HPARAMS.train_epochs)
+    epochs=HPARAMS.train_epochs,  
+          callbacks=[tensorboard_callback])
     graph_reg_model.evaluate(test_dataset)
 
     predict = graph_reg_model.predict(pred_dataset)
@@ -343,21 +393,3 @@ def make_dataset(file_path, training=False):
   return dataset
 
 HPARAMS = HParams()
-
-if __name__ == '__main__':
-  flags.DEFINE_string(
-      'id_feature_name', 'id',
-      """Name of the singleton bytes_list feature in each input Example
-      whose value is the Example's ID.""")
-  flags.DEFINE_string(
-      'embedding_feature_name', 'embedding',
-      """Name of the float_list feature in each input Example
-      whose value is the Example's (dense) embedding.""")
-  flags.DEFINE_float(
-      'similarity_threshold', 0.8,
-      """Lower bound on the cosine similarity required for an edge
-      to be created between two nodes.""")
-
-  # Ensure TF 2.0 behavior even if TF 1.X is installed.
-  tf.compat.v1.enable_v2_behavior()
-  app.run(_main)
